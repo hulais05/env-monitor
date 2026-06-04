@@ -1,0 +1,2128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Environmental Monitor — ESG Mining Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a18; }
+
+.dash-wrapper { max-width: 900px; margin: 2rem auto; background: #fff; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 12px; overflow: hidden; }
+
+.dash-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem 0.75rem; border-bottom: 0.5px solid rgba(0,0,0,0.1); }
+.dash-logo { display: flex; align-items: center; gap: 10px; }
+.dash-logo-icon { width: 32px; height: 32px; border-radius: 8px; background: #1D9E75; display: flex; align-items: center; justify-content: center; }
+.dash-logo-icon i { color: #fff; font-size: 18px; }
+.dash-title { font-size: 15px; font-weight: 500; }
+.dash-subtitle { font-size: 12px; color: #888; }
+.dash-controls { display: flex; gap: 8px; align-items: center; }
+.pill-btn { font-size: 12px; padding: 4px 10px; border: 0.5px solid rgba(0,0,0,0.2); border-radius: 20px; background: transparent; color: #666; cursor: pointer; }
+.pill-btn.active { background: #1D9E75; color: #fff; border-color: #1D9E75; }
+.export-btn { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid rgba(0,0,0,0.2); background: transparent; color: #666; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+.nav-tabs { display: flex; border-bottom: 0.5px solid rgba(0,0,0,0.1); padding: 0 1.25rem; }
+.nav-tab { font-size: 13px; padding: 10px 16px; cursor: pointer; color: #888; border-bottom: 2px solid transparent; margin-bottom: -0.5px; display: flex; align-items: center; gap: 6px; }
+.nav-tab.active { color: #0F6E56; border-bottom-color: #1D9E75; font-weight: 500; }
+.nav-tab i { font-size: 15px; }
+
+.section { padding: 1rem 1.25rem; display: none; }
+.section.active { display: block; }
+
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+.kpi-card { background: #f5f5f3; border-radius: 8px; padding: 0.85rem 1rem; }
+.kpi-label { font-size: 11px; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+.kpi-value { font-size: 22px; font-weight: 500; line-height: 1.1; }
+.kpi-value span { font-size: 13px; font-weight: 400; }
+.kpi-change { font-size: 11px; margin-top: 4px; display: flex; align-items: center; gap: 3px; }
+.kpi-up { color: #0F6E56; }
+.kpi-down-bad { color: #A32D2D; }
+.kpi-neutral { color: #888; }
+
+.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.25rem; }
+.chart-card { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 1rem 1.25rem; }
+.chart-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+.chart-card-title { font-size: 13px; font-weight: 500; }
+.chart-card-sub { font-size: 11px; color: #888; margin-top: 2px; }
+.badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+.badge-success { background: #E1F5EE; color: #085041; }
+.badge-warning { background: #FAEEDA; color: #633806; }
+.badge-danger { background: #FCEBEB; color: #501313; }
+
+.tl-row { display: flex; flex-direction: column; gap: 8px; margin-top: 0.5rem; }
+.tl-item { display: flex; align-items: center; justify-content: space-between; }
+.tl-label { font-size: 12px; color: #666; flex: 1; }
+.tl-bar-wrap { flex: 2; height: 6px; background: rgba(0,0,0,0.08); border-radius: 3px; margin: 0 10px; }
+.tl-bar { height: 6px; border-radius: 3px; }
+.tl-green { background: #1D9E75; }
+.tl-amber { background: #EF9F27; }
+.tl-red { background: #E24B4A; }
+.tl-value { font-size: 12px; font-weight: 500; min-width: 36px; text-align: right; }
+
+.sensor-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+.sensor-card { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 0.85rem 1rem; }
+.sensor-icon { font-size: 20px; margin-bottom: 6px; }
+.sensor-name { font-size: 11px; color: #888; }
+.sensor-val { font-size: 18px; font-weight: 500; margin: 2px 0; }
+.sensor-unit { font-size: 11px; color: #888; }
+.sensor-bar { height: 4px; border-radius: 2px; background: rgba(0,0,0,0.08); margin-top: 8px; }
+.sensor-fill { height: 4px; border-radius: 2px; }
+.sensor-note { font-size: 10px; color: #888; margin-top: 4px; }
+.sensor-note.warn { color: #854F0B; }
+.sensor-note.danger { color: #A32D2D; }
+
+.table-card { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; overflow: hidden; }
+.table-card table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.table-card th { background: #f5f5f3; padding: 8px 12px; text-align: left; font-weight: 500; color: #888; font-size: 11px; border-bottom: 0.5px solid rgba(0,0,0,0.1); }
+.table-card td { padding: 8px 12px; border-bottom: 0.5px solid rgba(0,0,0,0.06); }
+.table-card tr:last-child td { border-bottom: none; }
+
+.community-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.25rem; }
+.incident-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.incident-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px; background: #f5f5f3; border-radius: 8px; }
+.incident-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 3px; flex-shrink: 0; }
+.dot-green { background: #1D9E75; }
+.dot-amber { background: #EF9F27; }
+.dot-red { background: #E24B4A; }
+.incident-text { font-size: 12px; }
+.incident-meta { font-size: 11px; color: #888; margin-top: 2px; }
+
+.legend { display: flex; gap: 16px; margin-top: 8px; font-size: 11px; color: #888; flex-wrap: wrap; }
+.legend span { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+.legend-line { width: 14px; height: 2px; border-radius: 1px; display: inline-block; }
+
+.analyze-btn { font-size: 11px; padding: 3px 8px; border: 0.5px solid rgba(0,0,0,0.15); border-radius: 6px; background: transparent; color: #666; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.analyze-btn:hover { background: #f5f5f3; }
+
+/* ── Map module ── */
+#envMap   { height: 420px; border-radius: 8px; overflow: hidden; margin-bottom: 8px; border: 0.5px solid rgba(0,0,0,0.1); }
+.map-legend { display: flex; gap: 14px; font-size: 11px; color: #888; align-items: center; padding: 2px 0 4px; }
+.map-legend .ml-stat { margin-left: auto; font-size: 11px; color: #555; }
+.map-section { margin-bottom: 1.25rem; }
+.layer-controls { display: flex; gap: 8px; flex-wrap: wrap; padding: 6px 0 10px; border-bottom: 0.5px solid rgba(0,0,0,0.06); margin-bottom: 8px; }
+.layer-chk { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #555; cursor: pointer; padding: 3px 8px 3px 6px; border-radius: 6px; border: 0.5px solid rgba(0,0,0,0.12); background: #f5f5f3; user-select: none; }
+.layer-chk input[type=checkbox] { margin: 0; cursor: pointer; accent-color: #1D9E75; }
+.lc-swatch { width: 10px; height: 10px; border-radius: 50%; background: var(--lc); border: 2.5px solid var(--lc-b); flex-shrink: 0; }
+.lc-stat { font-size: 10px; color: #aaa; margin-left: 2px; }
+.water-popup .leaflet-popup-content-wrapper { border-radius: 10px; box-shadow: 0 4px 24px rgba(0,0,0,0.14); border: 0.5px solid rgba(0,0,0,0.1); padding: 0; overflow: hidden; }
+.water-popup .leaflet-popup-content { margin: 0; line-height: 1.4; }
+.water-popup .leaflet-popup-tip { display: none; }
+.water-popup .leaflet-popup-tip-container { display: none; }
+.water-popup .leaflet-popup-close-button { color: #888 !important; font-size: 16px !important; top: 8px !important; right: 8px !important; }
+.water-label { background: transparent !important; border: none !important; box-shadow: none !important; font-size: 10px !important; font-weight: 600 !important; color: #333 !important; white-space: nowrap !important; }
+.water-label::before { display: none !important; }
+.upload-active { color: #1D9E75 !important; border-color: #1D9E75 !important; }
+
+/* ── Clickable cards ── */
+.clickable { cursor: pointer; transition: box-shadow 0.15s ease, transform 0.12s ease; }
+.sensor-card.clickable:hover,
+.kpi-card.clickable:hover { box-shadow: 0 0 0 1.5px rgba(29,158,117,0.45); transform: translateY(-1px); }
+.chart-card.clickable:hover { box-shadow: 0 0 0 1.5px rgba(29,158,117,0.35), 0 4px 16px rgba(0,0,0,0.07); transform: translateY(-1px); }
+
+/* ── Detail modal ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(10,10,8,0.52);
+  backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal-panel {
+  background: #fff; border-radius: 14px;
+  width: min(820px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.22), 0 0 0 0.5px rgba(0,0,0,0.08);
+  transform: translateY(14px) scale(0.98);
+  transition: transform 0.18s ease;
+}
+.modal-overlay.open .modal-panel { transform: translateY(0) scale(1); }
+.modal-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 0.5px solid rgba(0,0,0,0.08);
+  position: sticky; top: 0; background: #fff; z-index: 1;
+  border-radius: 14px 14px 0 0;
+}
+.modal-title { font-size: 16px; font-weight: 600; }
+.modal-subtitle { font-size: 12px; color: #888; margin-top: 2px; }
+.modal-close { width: 28px; height: 28px; border-radius: 6px; border: 0.5px solid rgba(0,0,0,0.15); background: transparent; cursor: pointer; color: #666; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.modal-close:hover { background: #f5f5f3; }
+.modal-body { padding: 1.25rem 1.5rem 1.5rem; }
+.modal-hero { display: flex; align-items: center; gap: 14px; padding: 1rem 1.25rem; border-radius: 10px; background: #f5f5f3; margin-bottom: 1.25rem; }
+.modal-hero-val { font-size: 34px; font-weight: 500; line-height: 1; }
+.modal-hero-unit { font-size: 15px; color: #888; margin-left: 4px; }
+.modal-hero-chg { margin-left: auto; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+.modal-hero-chg.up { color: #0F6E56; }
+.modal-hero-chg.down-bad { color: #A32D2D; }
+.modal-hero-chg.neutral { color: #888; }
+.modal-section-label { font-size: 10px; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.modal-chart-wrap { position: relative; width: 100%; height: 220px; margin-bottom: 1.25rem; }
+.modal-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 1.25rem; border-radius: 8px; overflow: hidden; border: 0.5px solid rgba(0,0,0,0.09); }
+.modal-table th { background: #f5f5f3; padding: 7px 12px; text-align: left; font-weight: 500; color: #888; font-size: 11px; border-bottom: 0.5px solid rgba(0,0,0,0.09); }
+.modal-table td { padding: 7px 12px; border-bottom: 0.5px solid rgba(0,0,0,0.05); }
+.modal-table tr:last-child td { border-bottom: none; }
+.modal-alerts { display: flex; flex-direction: column; gap: 7px; }
+.modal-alert { display: flex; align-items: flex-start; gap: 9px; padding: 9px 12px; border-radius: 8px; font-size: 12px; line-height: 1.4; }
+.modal-alert i { font-size: 15px; flex-shrink: 0; margin-top: 0px; }
+.modal-alert.ok { background: #E1F5EE; color: #085041; }
+.modal-alert.warning { background: #FAEEDA; color: #633806; }
+.modal-alert.danger { background: #FCEBEB; color: #501313; }
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE — Mobile
+   Breakpoints: ≤640px (mobile), ≤780px (tablet)
+═══════════════════════════════════════════════════ */
+
+/* Tablet: colapsar grids de 4/3 a 2 columnas */
+@media (max-width: 780px) {
+  .dash-wrapper { margin: 1rem; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .sensor-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Mobile: ajustes completos para ≤640px */
+@media (max-width: 640px) {
+
+  /* Wrapper — full bleed */
+  body { background: #f5f5f3; }
+  .dash-wrapper { margin: 0; border-radius: 0; border-left: none; border-right: none; }
+
+  /* ── Header ─────────────────────────────────────── */
+  .dash-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 0.875rem 1rem 0.75rem;
+  }
+  .dash-controls {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .dash-controls::-webkit-scrollbar { display: none; }
+  .pill-btn  { font-size: 11px; padding: 4px 10px; white-space: nowrap; flex-shrink: 0; }
+  .export-btn { white-space: nowrap; flex-shrink: 0; font-size: 11px; }
+
+  /* ── Nav tabs — scroll horizontal ───────────────── */
+  .nav-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0 1rem;
+    gap: 0;
+  }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab { font-size: 12px; padding: 9px 12px; white-space: nowrap; gap: 4px; }
+  .nav-tab i { font-size: 14px; }
+
+  /* ── Section padding ─────────────────────────────── */
+  .section { padding: 0.875rem 1rem; }
+
+  /* ── KPI grid: 4 → 2×2 ──────────────────────────── */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 1rem; }
+  .kpi-value { font-size: 20px; }
+  .kpi-label { font-size: 10px; }
+
+  /* ── Sensor grid: 3 → 2 ─────────────────────────── */
+  .sensor-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 1rem; }
+  .sensor-val  { font-size: 16px; }
+
+  /* ── Charts row: 2 → 1 ──────────────────────────── */
+  .charts-row   { grid-template-columns: 1fr; gap: 10px; }
+  .community-row { grid-template-columns: 1fr; gap: 10px; }
+
+  /* ── Maps ────────────────────────────────────────── */
+  #envMap   { height: 280px; }
+  .map-legend { flex-wrap: wrap; font-size: 10px; gap: 8px; }
+  .layer-controls { gap: 6px; }
+  .layer-chk { font-size: 11px; padding: 2px 6px 2px 5px; }
+
+  /* ── Table — scroll horizontal ───────────────────── */
+  .table-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ── Chart card padding ──────────────────────────── */
+  .chart-card { padding: 0.875rem 1rem; }
+  .chart-card-title { font-size: 12px; }
+
+  /* ── Modal — pantalla completa en mobile ─────────── */
+  .modal-overlay {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+  .modal-overlay .modal-panel {
+    width: 100vw;
+    height: 100dvh;       /* dynamic viewport: descuenta la barra del browser */
+    max-height: 100dvh;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* anular la animación de escala — usar solo fade del overlay */
+    transform: none;
+    transition: none;
+  }
+  .modal-overlay.open .modal-panel { transform: none; }
+  .modal-header {
+    border-radius: 0;
+    padding: 1rem 1rem 0.875rem;
+    flex-shrink: 0;
+  }
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 1rem;
+  }
+  .modal-hero { padding: 0.875rem 1rem; margin-bottom: 1rem; }
+  .modal-hero-val { font-size: 28px; }
+  .modal-chart-wrap { height: 180px; margin-bottom: 1rem; }
+  /* Tablas con muchas columnas — scroll horizontal */
+  .modal-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  .modal-table th,
+  .modal-table td { white-space: nowrap; }
+}
+</style>
+</head>
+<body>
+
+<div class="dash-wrapper">
+
+  <!-- HEADER -->
+  <div class="dash-header">
+    <div class="dash-logo">
+      <div class="dash-logo-icon"><i class="ti ti-leaf"></i></div>
+      <div>
+        <div class="dash-title">Environmental Monitor</div>
+        <div class="dash-subtitle">Mining Operations · ESG Dashboard</div>
+      </div>
+    </div>
+    <div class="dash-controls">
+      <button class="pill-btn active" onclick="setPeriod(this)">Q2 2025</button>
+      <button class="pill-btn" onclick="setPeriod(this)">Q1 2025</button>
+      <button class="pill-btn" onclick="setPeriod(this)">YTD</button>
+      <button class="export-btn"><i class="ti ti-download" style="font-size:13px;"></i> Exportar</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showTab('executive', this)"><i class="ti ti-chart-pie"></i> Vista ejecutiva</div>
+    <div class="nav-tab" onclick="showTab('operative', this)"><i class="ti ti-activity"></i> Monitoreo operativo</div>
+    <div class="nav-tab" onclick="showTab('community', this)"><i class="ti ti-users"></i> Comunidad</div>
+  </div>
+
+  <!-- ===== VISTA EJECUTIVA ===== -->
+  <div class="section active" id="tab-executive">
+    <div class="kpi-grid">
+      <div class="kpi-card clickable" onclick="openModal('exec-gei')">
+        <div class="kpi-label">Emisiones GEI</div>
+        <div class="kpi-value" id="kpiGeiVal">4.820 <span>t CO₂e</span></div>
+        <div class="kpi-change kpi-up" id="kpiGeiChg"><i class="ti ti-trending-down" style="font-size:13px;"></i> -8.3% vs Q1</div>
+      </div>
+      <div class="kpi-card clickable" onclick="openModal('exec-agua')">
+        <div class="kpi-label">Agua recirculada</div>
+        <div class="kpi-value" id="kpiAguaVal">74.2 <span>%</span></div>
+        <div class="kpi-change kpi-up" id="kpiAguaChg"><i class="ti ti-trending-up" style="font-size:13px;"></i> +3.1% vs Q1</div>
+      </div>
+      <div class="kpi-card clickable" onclick="openModal('exec-cumplimiento')">
+        <div class="kpi-label">Cumplimiento regulatorio</div>
+        <div class="kpi-value" id="kpiCumplVal">91 <span>%</span></div>
+        <div class="kpi-change kpi-neutral" id="kpiCumplChg"><i class="ti ti-minus" style="font-size:13px;"></i> Sin cambio</div>
+      </div>
+      <div class="kpi-card clickable" onclick="openModal('exec-inversion')">
+        <div class="kpi-label">Inversión ambiental</div>
+        <div class="kpi-value" id="kpiInvVal">$184k</div>
+        <div class="kpi-change kpi-up" id="kpiInvChg"><i class="ti ti-trending-up" style="font-size:13px;"></i> +12% vs Q1</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card clickable" onclick="openModal('exec-chart-emisiones')">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">Alcance de emisiones</div><div class="chart-card-sub">Alcance 1 y 2 · t CO₂e</div></div>
+          <span class="badge badge-success">Meta: 5.200</span>
+        </div>
+        <div style="position:relative;width:100%;height:160px;"><canvas id="emissionsChart"></canvas></div>
+        <div class="legend">
+          <span><span class="legend-dot" style="background:#1D9E75;"></span>Alcance 1</span>
+          <span><span class="legend-dot" style="background:#9FE1CB;"></span>Alcance 2</span>
+        </div>
+      </div>
+
+      <div class="chart-card clickable" onclick="openModal('exec-chart-estado')">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">Estado regulatorio</div><div class="chart-card-sub">Por componente ambiental</div></div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-item">
+            <div class="tl-label">Calidad del aire</div>
+            <div class="tl-bar-wrap"><div class="tl-bar tl-green" style="width:88%;"></div></div>
+            <div class="tl-value">88%</div>
+            <span class="badge badge-success" style="margin-left:6px;">OK</span>
+          </div>
+          <div class="tl-item">
+            <div class="tl-label">Gestión hídrica</div>
+            <div class="tl-bar-wrap"><div class="tl-bar tl-amber" style="width:72%;"></div></div>
+            <div class="tl-value">72%</div>
+            <span class="badge badge-warning" style="margin-left:6px;">Atención</span>
+          </div>
+          <div class="tl-item">
+            <div class="tl-label">Residuos peligrosos</div>
+            <div class="tl-bar-wrap"><div class="tl-bar tl-green" style="width:95%;"></div></div>
+            <div class="tl-value">95%</div>
+            <span class="badge badge-success" style="margin-left:6px;">OK</span>
+          </div>
+          <div class="tl-item">
+            <div class="tl-label">Estabilidad relaves</div>
+            <div class="tl-bar-wrap"><div class="tl-bar tl-red" style="width:61%;"></div></div>
+            <div class="tl-value">61%</div>
+            <span class="badge badge-danger" style="margin-left:6px;">Alerta</span>
+          </div>
+          <div class="tl-item">
+            <div class="tl-label">Ruido y vibraciones</div>
+            <div class="tl-bar-wrap"><div class="tl-bar tl-green" style="width:84%;"></div></div>
+            <div class="tl-value">84%</div>
+            <span class="badge badge-success" style="margin-left:6px;">OK</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card clickable" onclick="openModal('exec-chart-tendencia')">
+      <div class="chart-card-header">
+        <div><div class="chart-card-title">Huella de carbono — tendencia anual</div><div class="chart-card-sub">Comparativo meta vs real · t CO₂e</div></div>
+        <button class="analyze-btn" onclick="event.stopPropagation()">Analizar ↗</button>
+      </div>
+      <div style="position:relative;width:100%;height:140px;"><canvas id="trendChart"></canvas></div>
+      <div class="legend">
+        <span><span class="legend-dot" style="background:#1D9E75;"></span>Emisiones reales</span>
+        <span><span class="legend-line" style="background:#EF9F27;"></span>Meta regulatoria</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== VISTA OPERATIVA ===== -->
+  <div class="section" id="tab-operative">
+    <div class="sensor-grid">
+      <div class="sensor-card clickable" onclick="openModal('op-sensor-hidrico')">
+        <div class="sensor-icon" style="color:#1D9E75;"><i class="ti ti-droplet"></i></div>
+        <div class="sensor-name">Consumo hídrico total</div>
+        <div class="sensor-val">38.400 <span class="sensor-unit">m³/mes</span></div>
+        <div class="sensor-bar"><div class="sensor-fill" style="background:#1D9E75;width:64%;"></div></div>
+        <div class="sensor-note">64% del límite concesionado</div>
+      </div>
+      <div class="sensor-card clickable" onclick="openModal('op-sensor-pm10')">
+        <div class="sensor-icon" style="color:#EF9F27;"><i class="ti ti-wind"></i></div>
+        <div class="sensor-name">Material particulado PM10</div>
+        <div class="sensor-val">48.2 <span class="sensor-unit">µg/m³</span></div>
+        <div class="sensor-bar"><div class="sensor-fill" style="background:#EF9F27;width:80%;"></div></div>
+        <div class="sensor-note warn">80% del límite · monitorear</div>
+      </div>
+      <div class="sensor-card clickable" onclick="openModal('op-chart-residuos')">
+        <div class="sensor-icon" style="color:#1D9E75;"><i class="ti ti-trash"></i></div>
+        <div class="sensor-name">Residuos reciclados</div>
+        <div class="sensor-val">68 <span class="sensor-unit">%</span></div>
+        <div class="sensor-bar"><div class="sensor-fill" style="background:#1D9E75;width:68%;"></div></div>
+        <div class="sensor-note">22% vertedero · 10% peligrosos</div>
+      </div>
+      <div class="sensor-card clickable" onclick="openModal('op-sensor-ph')">
+        <div class="sensor-icon" style="color:#E24B4A;"><i class="ti ti-flask"></i></div>
+        <div class="sensor-name">pH aguas subterráneas</div>
+        <div class="sensor-val" id="sensorPhVal">— <span class="sensor-unit">pH</span></div>
+        <div class="sensor-bar"><div class="sensor-fill" id="sensorPhBar" style="background:#E24B4A;width:0%;"></div></div>
+        <div class="sensor-note danger" id="sensorPhNote">Cargando…</div>
+      </div>
+      <div class="sensor-card clickable" onclick="openModal('op-sensor-od')">
+        <div class="sensor-icon" style="color:#EF9F27;" id="sensorOdIcon"><i class="ti ti-molecule"></i></div>
+        <div class="sensor-name">Oxígeno Disuelto</div>
+        <div class="sensor-val" id="sensorOdVal">— <span class="sensor-unit">µg/L</span></div>
+        <div class="sensor-bar"><div class="sensor-fill" id="sensorOdBar" style="background:#EF9F27;width:0%;"></div></div>
+        <div class="sensor-note" id="sensorOdNote">Cargando…</div>
+      </div>
+      <div class="sensor-card clickable" onclick="openModal('op-sensor-as')">
+        <div class="sensor-icon" style="color:#E24B4A;" id="sensorAsIcon"><i class="ti ti-atom"></i></div>
+        <div class="sensor-name">Arsénico Total</div>
+        <div class="sensor-val" id="sensorAsVal">— <span class="sensor-unit">µg/L</span></div>
+        <div class="sensor-bar"><div class="sensor-fill" id="sensorAsBar" style="background:#E24B4A;width:0%;"></div></div>
+        <div class="sensor-note danger" id="sensorAsNote">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- MAP SECTION — mapa unificado 4 capas -->
+    <div class="map-section">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">Monitoreo ambiental — Mapa unificado</div>
+            <div class="chart-card-sub" id="envMapSubtitle">4 capas activas · OpenStreetMap</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <button class="analyze-btn" onclick="openModal('op-aire-resumen')"><i class="ti ti-chart-bar" style="font-size:11px;"></i> Resumen aire</button>
+            <button class="analyze-btn" id="btnUpload" onclick="document.getElementById('excelInput').click()"><i class="ti ti-upload" style="font-size:11px;"></i> Agua XLS</button>
+            <button class="analyze-btn" onclick="downloadTemplate()"><i class="ti ti-table-export" style="font-size:11px;"></i></button>
+            <button class="analyze-btn" id="btnAirUpload" onclick="document.getElementById('airExcelInput').click()"><i class="ti ti-upload" style="font-size:11px;"></i> Aire XLS</button>
+            <button class="analyze-btn" onclick="downloadAirTemplate()"><i class="ti ti-table-export" style="font-size:11px;"></i></button>
+            <input type="file" id="excelInput" accept=".xlsx,.xls" style="display:none" onchange="handleExcelUpload(this)">
+            <input type="file" id="airExcelInput" accept=".xlsx,.xls" style="display:none" onchange="handleAirExcelUpload(this)">
+          </div>
+        </div>
+        <div class="layer-controls">
+          <label class="layer-chk" for="chk_agua">
+            <input type="checkbox" id="chk_agua" checked onchange="toggleLayer('agua', this.checked)">
+            <span class="lc-swatch" style="--lc:#378ADD;--lc-b:#1A5A9E;"></span>
+            Agua <span class="lc-stat" id="stat_agua"></span>
+          </label>
+          <label class="layer-chk" for="chk_aire">
+            <input type="checkbox" id="chk_aire" checked onchange="toggleLayer('aire', this.checked)">
+            <span class="lc-swatch" style="--lc:#4DAEDF;--lc-b:#1578A0;"></span>
+            Aire <span class="lc-stat" id="stat_aire"></span>
+          </label>
+          <label class="layer-chk" for="chk_suelo">
+            <input type="checkbox" id="chk_suelo" checked onchange="toggleLayer('suelo', this.checked)">
+            <span class="lc-swatch" style="--lc:#9B7348;--lc-b:#5C3D1A;"></span>
+            Suelo <span class="lc-stat" id="stat_suelo"></span>
+          </label>
+          <label class="layer-chk" for="chk_relaves">
+            <input type="checkbox" id="chk_relaves" checked onchange="toggleLayer('relaves', this.checked)">
+            <span class="lc-swatch" style="--lc:#E87228;--lc-b:#9E4A10;"></span>
+            Relaves <span class="lc-stat" id="stat_relaves"></span>
+          </label>
+        </div>
+        <div id="envMap"></div>
+        <div class="map-legend">
+          <span>Estado:</span>
+          <span><span class="legend-dot" style="background:#1D9E75;border-radius:50%;"></span> OK</span>
+          <span><span class="legend-dot" style="background:#EF9F27;border-radius:50%;"></span> Atención</span>
+          <span><span class="legend-dot" style="background:#E24B4A;border-radius:50%;"></span> Alerta</span>
+          <span class="ml-stat" id="envMapStats"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA COMPARATIVA — calidad de agua subterránea · todos los pozos -->
+    <div class="chart-card" style="margin-bottom:1.25rem;overflow:hidden;">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Resumen comparativo — calidad de agua subterránea</div>
+          <div class="chart-card-sub" id="compTableSubtitle">13 pozos · 5 parámetros · Campaña Dic 2024</div>
+        </div>
+        <button class="analyze-btn" onclick="exportCompTable()"><i class="ti ti-table-export" style="font-size:11px;"></i> Exportar XLS</button>
+      </div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:700px;">
+          <thead>
+            <tr style="background:#f5f5f3;">
+              <th style="padding:7px 12px;text-align:left;font-weight:500;color:#888;font-size:11px;border-bottom:0.5px solid rgba(0,0,0,0.1);white-space:nowrap;">Pozo</th>
+              <th style="padding:7px 12px;text-align:left;font-weight:500;color:#888;font-size:11px;border-bottom:0.5px solid rgba(0,0,0,0.1);white-space:nowrap;">Tipo</th>
+              <th style="padding:7px 12px;text-align:right;font-weight:500;color:#888;font-size:11px;border-bottom:0.5px solid rgba(0,0,0,0.1);white-space:nowrap;">pH (UpH)</th>
+              <th style="padding:7px 12px;text-align:right;font-weight:500;color:#888;font-size:11px;border-bottom:0.5px solid rgba(0,0,0,0.1);white-space:nowrap;">OD (µg/L)</th>
+              <th style="padding:7px 12px;text-align:right;font-weight:500;color:#888;font-size:11px;border-bottom:0.5px solid rgba(0,0,0,0.1);white-space:nowrap;">Conductiv. (µS/cm)</th>
+              <th style="padding:7px 12px;text-align:right;font-weight:500;color:#888;font-size:11px;border-bottom:0.5px solid rgba(0,0,0,0.1);white-space:nowrap;">As Total (µg/L)</th>
+              <th style="padding:7px 12px;text-align:right;font-weight:500;color:#888;font-size:11px;border-bottom:0.5px solid rgba(0,0,0,0.1);white-space:nowrap;">Litio (µg/L)</th>
+              <th style="padding:7px 12px;text-align:center;font-weight:500;color:#888;font-size:11px;border-bottom:0.5px solid rgba(0,0,0,0.1);white-space:nowrap;">Estado</th>
+            </tr>
+          </thead>
+          <tbody id="compTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="charts-row" style="margin-bottom:1.25rem;">
+      <div class="chart-card clickable" onclick="openModal('op-chart-balance')">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">Balance hídrico mensual</div><div class="chart-card-sub">Captado vs recirculado · m³</div></div>
+          <span class="badge badge-warning">Meta incompleta</span>
+        </div>
+        <div style="position:relative;width:100%;height:160px;"><canvas id="waterChart"></canvas></div>
+        <div class="legend">
+          <span><span class="legend-dot" style="background:#378ADD;"></span>Captado</span>
+          <span><span class="legend-dot" style="background:#1D9E75;"></span>Recirculado</span>
+        </div>
+      </div>
+
+      <div class="chart-card clickable" onclick="openModal('op-chart-residuos')">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">Distribución de residuos</div><div class="chart-card-sub">Por tipo · toneladas</div></div>
+        </div>
+        <div style="position:relative;width:100%;height:160px;"><canvas id="wasteChart"></canvas></div>
+        <div class="legend">
+          <span><span class="legend-dot" style="background:#1D9E75;"></span>Reciclados 68%</span>
+          <span><span class="legend-dot" style="background:#EF9F27;"></span>Vertedero 22%</span>
+          <span><span class="legend-dot" style="background:#E24B4A;"></span>Peligrosos 10%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Punto de monitoreo</th><th>Parámetro</th><th>Valor medido</th><th>Límite legal</th><th>Estado</th><th>Última medición</th></tr></thead>
+        <tbody id="monitorTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== VISTA COMUNIDAD ===== -->
+  <div class="section" id="tab-community">
+    <div class="kpi-grid">
+      <div class="kpi-card clickable" onclick="openModal('comm-kpi-trabajadores')">
+        <div class="kpi-label">Trabajadores locales</div>
+        <div class="kpi-value">62 <span>%</span></div>
+        <div class="kpi-change kpi-up"><i class="ti ti-trending-up" style="font-size:13px;"></i> +5% vs Q1</div>
+      </div>
+      <div class="kpi-card clickable" onclick="openModal('comm-kpi-proveedores')">
+        <div class="kpi-label">Proveedores locales</div>
+        <div class="kpi-value">41 <span>%</span></div>
+        <div class="kpi-change kpi-up"><i class="ti ti-trending-up" style="font-size:13px;"></i> +2% vs Q1</div>
+      </div>
+      <div class="kpi-card clickable" onclick="openModal('comm-kpi-incidentes')">
+        <div class="kpi-label">Incidentes abiertos</div>
+        <div class="kpi-value">3</div>
+        <div class="kpi-change kpi-down-bad"><i class="ti ti-alert-triangle" style="font-size:13px;"></i> 1 nuevo esta semana</div>
+      </div>
+      <div class="kpi-card clickable" onclick="openModal('comm-kpi-respuesta')">
+        <div class="kpi-label">Tiempo resp. promedio</div>
+        <div class="kpi-value">4.2 <span>días</span></div>
+        <div class="kpi-change kpi-up"><i class="ti ti-trending-up" style="font-size:13px;"></i> Meta: ≤5 días</div>
+      </div>
+    </div>
+
+    <div class="community-row">
+      <div class="chart-card clickable" onclick="openModal('comm-chart-empleo')">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">Empleo e impacto local</div><div class="chart-card-sub">Distribución por origen</div></div>
+        </div>
+        <div style="position:relative;width:100%;height:160px;"><canvas id="employChart"></canvas></div>
+        <div class="legend">
+          <span><span class="legend-dot" style="background:#1D9E75;"></span>Local</span>
+          <span><span class="legend-dot" style="background:#B4B2A9;"></span>Externo</span>
+        </div>
+      </div>
+
+      <div class="chart-card clickable" onclick="openModal('comm-chart-quejas')">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">Quejas ambientales</div><div class="chart-card-sub">Estado de resolución</div></div>
+        </div>
+        <div class="incident-list">
+          <div class="incident-item"><div class="incident-dot dot-red"></div><div><div class="incident-text">Polvo en ruta de camiones (Sector Norte)</div><div class="incident-meta">Reportado: 28 May · <span style="color:#A32D2D;">Abierto</span></div></div></div>
+          <div class="incident-item"><div class="incident-dot dot-amber"></div><div><div class="incident-text">Ruido nocturno en operaciones</div><div class="incident-meta">Reportado: 15 May · <span style="color:#854F0B;">En proceso</span></div></div></div>
+          <div class="incident-item"><div class="incident-dot dot-green"></div><div><div class="incident-text">Turbidez en canal de riego comunal</div><div class="incident-meta">Reportado: 02 May · <span style="color:#0F6E56;">Resuelto</span></div></div></div>
+          <div class="incident-item"><div class="incident-dot dot-amber"></div><div><div class="incident-text">Vibración por voladuras (Zona residencial)</div><div class="incident-meta">Reportado: 18 May · <span style="color:#854F0B;">En proceso</span></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card clickable" onclick="openModal('comm-chart-inversion')">
+      <div class="chart-card-header">
+        <div><div class="chart-card-title">Inversión social y ambiental comunitaria</div><div class="chart-card-sub">Por categoría · USD</div></div>
+        <button class="analyze-btn" onclick="event.stopPropagation()">Sugerir iniciativas ↗</button>
+      </div>
+      <div style="position:relative;width:100%;height:120px;"><canvas id="socialChart"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Detail Modal ── -->
+<div id="detailModal" class="modal-overlay" onclick="closeModal()">
+  <div class="modal-panel" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-subtitle" id="modalSubtitleEl"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+
+// ═══════════════════════════════════════════════════════════════════
+//  TAB NAVIGATION
+// ═══════════════════════════════════════════════════════════════════
+
+function showTab(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  el.classList.add('active');
+  if (id === 'operative') {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (!envMap) initEnvMap(); else envMap.invalidateSize();
+    }));
+  }
+}
+
+function setPeriod(el) {
+  document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  CHART.JS — main dashboard charts
+// ═══════════════════════════════════════════════════════════════════
+
+const gridColor = 'rgba(0,0,0,0.06)';
+const tickColor = 'rgba(0,0,0,0.45)';
+const baseOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } } },
+    y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } } }
+  }
+};
+
+new Chart(document.getElementById('emissionsChart'), {
+  type: 'bar',
+  data: { labels: ['Ene','Feb','Mar','Abr','May','Jun'], datasets: [
+    { label: 'Alcance 1', data: [1600,1550,1480,1420,1390,1360], backgroundColor: '#1D9E75', borderRadius: 3 },
+    { label: 'Alcance 2', data: [980,1020,960,900,890,870],      backgroundColor: '#9FE1CB', borderRadius: 3 }
+  ]},
+  options: { ...baseOpts, scales: {
+    x: { stacked: true, grid:{color:gridColor}, ticks:{color:tickColor,font:{size:11}} },
+    y: { stacked: true, grid:{color:gridColor}, ticks:{color:tickColor,font:{size:11}} }
+  }}
+});
+
+new Chart(document.getElementById('trendChart'), {
+  type: 'line',
+  data: { labels: ['Ene','Feb','Mar','Abr','May','Jun'], datasets: [
+    { label: 'Emisiones reales', data: [5200,5050,4900,4820,4750,4680], borderColor: '#1D9E75', backgroundColor: 'rgba(29,158,117,0.08)', tension: 0.4, fill: true, pointRadius: 3 },
+    { label: 'Meta', data: [5200,5200,5200,5200,5200,5200], borderColor: '#EF9F27', borderDash: [5,3], tension: 0, pointRadius: 0 }
+  ]},
+  options: baseOpts
+});
+
+new Chart(document.getElementById('waterChart'), {
+  type: 'bar',
+  data: { labels: ['Ene','Feb','Mar','Abr','May','Jun'], datasets: [
+    { label: 'Captado',     data: [42000,40500,39800,38400,37900,38400], backgroundColor: '#378ADD', borderRadius: 3 },
+    { label: 'Recirculado', data: [28000,29100,29500,28500,28000,28500], backgroundColor: '#1D9E75', borderRadius: 3 }
+  ]},
+  options: baseOpts
+});
+
+new Chart(document.getElementById('wasteChart'), {
+  type: 'doughnut',
+  data: { labels: ['Reciclados','Vertedero','Peligrosos'], datasets: [{ data: [68,22,10], backgroundColor: ['#1D9E75','#EF9F27','#E24B4A'], borderWidth: 0, hoverOffset: 4 }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '68%' }
+});
+
+new Chart(document.getElementById('employChart'), {
+  type: 'bar',
+  data: { labels: ['Personal directo','Contratos','Proveedores'], datasets: [
+    { label: 'Local',   data: [62,58,41], backgroundColor: '#1D9E75', borderRadius: 3 },
+    { label: 'Externo', data: [38,42,59], backgroundColor: '#B4B2A9', borderRadius: 3 }
+  ]},
+  options: { ...baseOpts, scales: {
+    x: { stacked: true, grid:{color:gridColor}, ticks:{color:tickColor,font:{size:11}} },
+    y: { stacked: true, max: 100, grid:{color:gridColor}, ticks:{color:tickColor,font:{size:11},callback:v=>v+'%'} }
+  }}
+});
+
+new Chart(document.getElementById('socialChart'), {
+  type: 'bar',
+  data: { labels: ['Educación','Salud','Infraestructura','Medio ambiente','Cultura'], datasets: [{
+    data: [48000,32000,27000,41000,18000],
+    backgroundColor: ['#1D9E75','#378ADD','#EF9F27','#5DCAA5','#9FE1CB'], borderRadius: 3
+  }]},
+  options: { ...baseOpts, plugins:{legend:{display:false}}, scales:{
+    x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11}}},
+    y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11},callback:v=>'$'+(v/1000).toFixed(0)+'k'}}
+  }}
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  UNIFIED ENVIRONMENTAL MAP — 4 capas con checkboxes
+//  Borde del marker = tipo de capa · Relleno = estado (OK/Atención/Alerta)
+// ═══════════════════════════════════════════════════════════════════
+
+const STATUS_COLOR = { ok: '#1D9E75', warning: '#EF9F27', danger: '#E24B4A' };
+const STATUS_LABEL = { ok: 'OK', warning: 'Atención', danger: 'Alerta' };
+const BADGE_BG = { ok: '#E1F5EE', warning: '#FAEEDA', danger: '#FCEBEB' };
+const BADGE_FG = { ok: '#085041', warning: '#633806', danger: '#501313' };
+
+// ── Datos: Agua ──────────────────────────────────────────────────────
+
+let MONITORING_POINTS = [];
+
+// ── Datos: Aire ──────────────────────────────────────────────────────
+
+let AIR_MONITORING_POINTS = [
+  { id:'A-1', name:'Estación A-1', type:'Planta de chancado', lat:-23.501, lng:-66.418, desc:'Inmediaciones planta chancado primario — fuente principal de polvo', fecha:'30/05/2025',
+    params:[{p:'PM10',v:52.4,u:'µg/m³',lim:'≤ 60',s:'warning'},{p:'PM2.5',v:22.4,u:'µg/m³',lim:'≤ 25',s:'warning'},{p:'SO₂',v:8.2,u:'µg/m³',lim:'≤ 80',s:'ok'},{p:'NOₓ',v:24.1,u:'µg/m³',lim:'≤ 100',s:'ok'},{p:'Viento',v:'SE · 12 km/h',u:'',lim:'Referencia',s:'ok'}] },
+  { id:'A-2', name:'Estación A-2', type:'Camino principal', lat:-23.491, lng:-66.411, desc:'Ruta de acceso vehículos pesados — tráfico de camiones', fecha:'30/05/2025',
+    params:[{p:'PM10',v:48.2,u:'µg/m³',lim:'≤ 60',s:'warning'},{p:'PM2.5',v:18.1,u:'µg/m³',lim:'≤ 25',s:'ok'},{p:'SO₂',v:6.4,u:'µg/m³',lim:'≤ 80',s:'ok'},{p:'NOₓ',v:38.6,u:'µg/m³',lim:'≤ 100',s:'ok'},{p:'Viento',v:'NO · 8 km/h',u:'',lim:'Referencia',s:'ok'}] },
+  { id:'A-3', name:'Estación A-3', type:'Zona de voladura', lat:-23.509, lng:-66.404, desc:'Sector tajo abierto — post-voladura (última: 29/05/2025)', fecha:'29/05/2025',
+    params:[{p:'PM10',v:78.6,u:'µg/m³',lim:'≤ 60',s:'danger'},{p:'PM2.5',v:28.4,u:'µg/m³',lim:'≤ 25',s:'danger'},{p:'SO₂',v:42.1,u:'µg/m³',lim:'≤ 80',s:'warning'},{p:'NOₓ',v:68.3,u:'µg/m³',lim:'≤ 100',s:'warning'},{p:'Viento',v:'SE · 15 km/h',u:'',lim:'Referencia',s:'ok'}] },
+  { id:'A-4', name:'Estación A-4', type:'Zona residencial', lat:-23.480, lng:-66.423, desc:'Comunidad más cercana — receptor sensible prioritario', fecha:'30/05/2025',
+    params:[{p:'PM10',v:32.1,u:'µg/m³',lim:'≤ 60',s:'ok'},{p:'PM2.5',v:12.8,u:'µg/m³',lim:'≤ 25',s:'ok'},{p:'SO₂',v:4.2,u:'µg/m³',lim:'≤ 80',s:'ok'},{p:'NOₓ',v:14.6,u:'µg/m³',lim:'≤ 100',s:'ok'},{p:'Viento',v:'NE · 6 km/h',u:'',lim:'Referencia',s:'ok'}] },
+  { id:'A-5', name:'Estación A-5', type:'Referencia background', lat:-23.475, lng:-66.396, desc:'Estación de referencia — fondo natural sin influencia de operación', fecha:'30/05/2025',
+    params:[{p:'PM10',v:18.4,u:'µg/m³',lim:'≤ 60',s:'ok'},{p:'PM2.5',v:7.2,u:'µg/m³',lim:'≤ 25',s:'ok'},{p:'SO₂',v:2.1,u:'µg/m³',lim:'≤ 80',s:'ok'},{p:'NOₓ',v:6.8,u:'µg/m³',lim:'≤ 100',s:'ok'},{p:'Viento',v:'N · 5 km/h',u:'',lim:'Referencia',s:'ok'}] },
+];
+
+// ── Datos: Suelo ─────────────────────────────────────────────────────
+
+let SOIL_MONITORING_POINTS = [
+  { id:'S-01', name:'Suelo S-01', type:'Zona acopio mineral', lat:-23.498, lng:-66.415, desc:'Sector acopio chancado — influencia de polvo y lixiviados', fecha:'28/05/2025',
+    params:[{p:'pH suelo',v:5.1,u:'',lim:'5.5–7.5',s:'danger'},{p:'Plomo',v:38,u:'mg/kg',lim:'≤ 35',s:'danger'},{p:'Zinc',v:188,u:'mg/kg',lim:'≤ 200',s:'warning'},{p:'Arsénico',v:14,u:'mg/kg',lim:'≤ 15',s:'ok'}] },
+  { id:'S-02', name:'Suelo S-02', type:'Flanco este', lat:-23.505, lng:-66.407, desc:'Sector flanco este — monitoreo dispersión de metales', fecha:'30/05/2025',
+    params:[{p:'pH suelo',v:6.2,u:'',lim:'5.5–7.5',s:'ok'},{p:'Plomo',v:22,u:'mg/kg',lim:'≤ 35',s:'ok'},{p:'Zinc',v:142,u:'mg/kg',lim:'≤ 200',s:'ok'},{p:'Arsénico',v:8,u:'mg/kg',lim:'≤ 15',s:'ok'}] },
+  { id:'S-03', name:'Suelo S-03', type:'Zona revegetación', lat:-23.488, lng:-66.428, desc:'Sector en revegetación — control de recuperación de suelos', fecha:'30/05/2025',
+    params:[{p:'pH suelo',v:6.8,u:'',lim:'5.5–7.5',s:'ok'},{p:'Plomo',v:18,u:'mg/kg',lim:'≤ 35',s:'ok'},{p:'Zinc',v:95,u:'mg/kg',lim:'≤ 200',s:'ok'},{p:'Arsénico',v:5,u:'mg/kg',lim:'≤ 15',s:'ok'}] },
+];
+
+// ── Datos: Relaves ───────────────────────────────────────────────────
+
+let TAILING_MONITORING_POINTS = [
+  { id:'TR-01', name:'Relaves TR-01', type:'Dique Norte — coronamiento', lat:-23.526, lng:-66.418, desc:'Coronamiento dique norte — piezómetros y nivel freático', fecha:'30/05/2025',
+    params:[{p:'Nivel freático',v:2.8,u:'m',lim:'≤ 3.0',s:'warning'},{p:'Presión poros',v:74,u:'kPa',lim:'≤ 80',s:'warning'},{p:'Deformación',v:8,u:'mm',lim:'≤ 15',s:'ok'},{p:'Sismicidad',v:0.02,u:'g',lim:'≤ 0.05',s:'ok'}] },
+  { id:'TR-02', name:'Relaves TR-02', type:'Dique Norte — pie', lat:-23.532, lng:-66.422, desc:'Pie de dique norte — filtraciones y drenaje', fecha:'29/05/2025',
+    params:[{p:'Nivel freático',v:1.2,u:'m',lim:'≤ 3.0',s:'ok'},{p:'Presión poros',v:42,u:'kPa',lim:'≤ 80',s:'ok'},{p:'Deformación',v:18,u:'mm',lim:'≤ 15',s:'danger'},{p:'Turbidez efluente',v:62,u:'NTU',lim:'≤ 50',s:'danger'}] },
+  { id:'TR-03', name:'Relaves TR-03', type:'Dique Sur', lat:-23.519, lng:-66.440, desc:'Dique sur — depósito secundario en construcción', fecha:'30/05/2025',
+    params:[{p:'Nivel freático',v:0.8,u:'m',lim:'≤ 3.0',s:'ok'},{p:'Presión poros',v:28,u:'kPa',lim:'≤ 80',s:'ok'},{p:'Deformación',v:4,u:'mm',lim:'≤ 15',s:'ok'},{p:'Sismicidad',v:0.01,u:'g',lim:'≤ 0.05',s:'ok'}] },
+];
+
+// ── Config de capas ──────────────────────────────────────────────────
+
+const LAYER_CONFIG = {
+  agua:    { label: 'Agua',    borderColor: '#1A5A9E', points: () => MONITORING_POINTS,         isAir: false },
+  aire:    { label: 'Aire',    borderColor: '#1578A0', points: () => AIR_MONITORING_POINTS,     isAir: true  },
+  suelo:   { label: 'Suelo',   borderColor: '#5C3D1A', points: () => SOIL_MONITORING_POINTS,    isAir: false },
+  relaves: { label: 'Relaves', borderColor: '#9E4A10', points: () => TAILING_MONITORING_POINTS, isAir: false },
+};
+
+// ── Helpers ──────────────────────────────────────────────────────────
+
+function pointStatus(pt) {
+  if (pt.params.some(p => p.s === 'danger'))  return 'danger';
+  if (pt.params.some(p => p.s === 'warning')) return 'warning';
+  return 'ok';
+}
+
+function buildEnvPopup(pt, isAir) {
+  const st = pointStatus(pt), col = STATUS_COLOR[st];
+  const rows = pt.params.map(p => {
+    const isRef = isAir && p.lim === 'Referencia';
+    const badge = isRef
+      ? `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#f0f0ee;color:#888;font-weight:500;">Info</span>`
+      : `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${BADGE_BG[p.s]};color:${BADGE_FG[p.s]};font-weight:500;">${STATUS_LABEL[p.s]}</span>`;
+    return `<tr>
+      <td style="padding:5px 10px;font-size:11px;color:#555;border-bottom:0.5px solid rgba(0,0,0,0.06);">${p.p}</td>
+      <td style="padding:5px 10px;font-size:11px;font-weight:600;border-bottom:0.5px solid rgba(0,0,0,0.06);">${p.v} ${p.u}</td>
+      <td style="padding:5px 10px;font-size:11px;color:#999;border-bottom:0.5px solid rgba(0,0,0,0.06);">${p.lim}</td>
+      <td style="padding:5px 10px;border-bottom:0.5px solid rgba(0,0,0,0.06);">${badge}</td>
+    </tr>`;
+  }).join('');
+  return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-width:280px;">
+    <div style="padding:12px 14px 10px;border-bottom:0.5px solid rgba(0,0,0,0.08);display:flex;align-items:flex-start;gap:10px;">
+      <div style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;margin-top:3px;"></div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${pt.name}</div><div style="font-size:11px;color:#888;">${pt.type}</div><div style="font-size:11px;color:#aaa;">${pt.desc}</div></div>
+      <span style="font-size:10px;padding:3px 8px;border-radius:8px;background:${BADGE_BG[st]};color:${BADGE_FG[st]};font-weight:600;">${STATUS_LABEL[st]}</span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr style="background:#f7f7f5;">
+        <th style="padding:5px 10px;font-size:10px;color:#aaa;text-align:left;font-weight:500;">Parámetro</th>
+        <th style="padding:5px 10px;font-size:10px;color:#aaa;text-align:left;font-weight:500;">Valor</th>
+        <th style="padding:5px 10px;font-size:10px;color:#aaa;text-align:left;font-weight:500;">Límite</th>
+        <th style="padding:5px 10px;font-size:10px;color:#aaa;text-align:left;font-weight:500;">Estado</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="padding:6px 14px 8px;font-size:10px;color:#bbb;">Última medición: ${pt.fecha}</div>
+  </div>`;
+}
+
+// ── Mapa unificado ────────────────────────────────────────────────────
+
+let envMap = null;
+const envLayers = {};
+
+function initEnvMap() {
+  if (envMap) return;
+  envMap = L.map('envMap', { center: [-23.310, -67.013], zoom: 11 });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+  }).addTo(envMap);
+  Object.keys(LAYER_CONFIG).forEach(key => {
+    envLayers[key] = L.layerGroup().addTo(envMap);
+  });
+  renderEnvLayers();
+}
+
+function renderEnvLayers() {
+  Object.keys(LAYER_CONFIG).forEach(key => {
+    const cfg = LAYER_CONFIG[key];
+    envLayers[key].clearLayers();
+    cfg.points().forEach(pt => {
+      const st = pointStatus(pt);
+      const m = L.circleMarker([pt.lat, pt.lng], {
+        radius: 10, fillColor: STATUS_COLOR[st], color: cfg.borderColor,
+        weight: 2.5, opacity: 1, fillOpacity: 0.92,
+      });
+      m.bindTooltip(pt.id, { permanent: true, direction: 'top', offset: [0, -14], className: 'water-label' });
+      m.bindPopup(buildEnvPopup(pt, cfg.isAir), { maxWidth: 340, className: 'water-popup', offset: [0, -4] });
+      envLayers[key].addLayer(m);
+    });
+  });
+  updateEnvMapStats();
+}
+
+function toggleLayer(key, visible) {
+  if (!envMap) return;
+  if (visible) envMap.addLayer(envLayers[key]);
+  else         envMap.removeLayer(envLayers[key]);
+  updateEnvMapStats();
+}
+
+function updateEnvMapStats() {
+  let total = 0, ok = 0, warn = 0, danger = 0;
+  Object.keys(LAYER_CONFIG).forEach(key => {
+    const chk    = document.getElementById('chk_' + key);
+    const statEl = document.getElementById('stat_' + key);
+    const visible = chk && chk.checked;
+    if (statEl) statEl.textContent = visible ? LAYER_CONFIG[key].points().length : '';
+    if (!visible) return;
+    LAYER_CONFIG[key].points().forEach(pt => {
+      total++;
+      const s = pointStatus(pt);
+      if (s === 'ok') ok++; else if (s === 'warning') warn++; else danger++;
+    });
+  });
+  const el = document.getElementById('envMapStats');
+  if (el) el.textContent = `${total} puntos · ${ok} OK · ${warn} Atención · ${danger} Alerta`;
+}
+
+// ── Excel upload — Agua ───────────────────────────────────────────────
+
+function handleExcelUpload(input) {
+  const file = input.files[0]; if (!file) return;
+  const btn = document.getElementById('btnUpload');
+  btn.classList.add('upload-active'); btn.innerHTML = '<i class="ti ti-loader" style="font-size:11px;"></i> Cargando…';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb   = XLSX.read(e.target.result, { type: 'binary' });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      applyExcelData(rows);
+      btn.innerHTML = '<i class="ti ti-check" style="font-size:11px;"></i> Cargado';
+      setTimeout(() => { btn.classList.remove('upload-active'); btn.innerHTML = '<i class="ti ti-upload" style="font-size:11px;"></i> Agua XLS'; }, 2500);
+    } catch(err) {
+      alert('Error: ' + err.message);
+      btn.classList.remove('upload-active'); btn.innerHTML = '<i class="ti ti-upload" style="font-size:11px;"></i> Agua XLS';
+    }
+    input.value = '';
+  };
+  reader.readAsBinaryString(file);
+}
+function applyExcelData(rows) {
+  const by = {};
+  rows.forEach(r => { const id = String(r['Punto'] || '').trim(); if (!id) return; if (!by[id]) by[id] = { params: [], fecha: String(r['Fecha'] || '') }; const s = String(r['Estado'] || 'ok').toLowerCase().trim(); by[id].params.push({ p: String(r['Parámetro'] || ''), v: parseFloat(r['Valor']) || 0, u: String(r['Unidad'] || ''), lim: String(r['Limite_legal'] || ''), s: ['ok','warning','danger'].includes(s) ? s : 'ok' }); });
+  Object.keys(by).forEach(id => { const pt = MONITORING_POINTS.find(p => p.id === id); if (pt) { pt.params = by[id].params; pt.fecha = by[id].fecha; } });
+  renderEnvLayers();
+  document.getElementById('envMapSubtitle').textContent = `${MONITORING_POINTS.length} puntos agua · datos desde Excel`;
+}
+function downloadTemplate() {
+  const data = [];
+  MONITORING_POINTS.forEach(pt => pt.params.forEach(p => data.push({ 'Fecha': pt.fecha, 'Punto': pt.id, 'Parámetro': p.p, 'Valor': p.v, 'Unidad': p.u, 'Limite_legal': p.lim, 'Estado': p.s })));
+  const ws = XLSX.utils.json_to_sheet(data); ws['!cols'] = [{wch:12},{wch:10},{wch:16},{wch:8},{wch:12},{wch:14},{wch:10}];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'MonitoreoAgua');
+  XLSX.writeFile(wb, 'plantilla_monitoreo_hidrico.xlsx');
+}
+
+// ── Excel upload — Aire ───────────────────────────────────────────────
+
+function handleAirExcelUpload(input) {
+  const file = input.files[0]; if (!file) return;
+  const btn  = document.getElementById('btnAirUpload');
+  btn.classList.add('upload-active'); btn.innerHTML = '<i class="ti ti-loader" style="font-size:11px;"></i> Cargando…';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb   = XLSX.read(e.target.result, { type: 'binary' });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      applyAirExcelData(rows);
+      btn.innerHTML = '<i class="ti ti-check" style="font-size:11px;"></i> Cargado';
+      setTimeout(() => { btn.classList.remove('upload-active'); btn.innerHTML = '<i class="ti ti-upload" style="font-size:11px;"></i> Aire XLS'; }, 2500);
+    } catch(err) {
+      alert('Error: ' + err.message);
+      btn.classList.remove('upload-active'); btn.innerHTML = '<i class="ti ti-upload" style="font-size:11px;"></i> Aire XLS';
+    }
+    input.value = '';
+  };
+  reader.readAsBinaryString(file);
+}
+function applyAirExcelData(rows) {
+  const by = {};
+  rows.forEach(r => {
+    const id = String(r['Punto'] || '').trim(); if (!id) return;
+    if (!by[id]) by[id] = { params: [], fecha: String(r['Fecha'] || '') };
+    const s = String(r['Estado'] || 'ok').toLowerCase().trim();
+    by[id].params.push({ p: String(r['Parámetro'] || ''), v: String(r['Parámetro']) === 'Viento' ? String(r['Valor']) : (parseFloat(r['Valor']) || 0), u: String(r['Unidad'] || ''), lim: String(r['Limite_legal'] || ''), s: ['ok','warning','danger'].includes(s) ? s : 'ok' });
+  });
+  Object.keys(by).forEach(id => { const pt = AIR_MONITORING_POINTS.find(p => p.id === id); if (pt) { pt.params = by[id].params; pt.fecha = by[id].fecha; } });
+  renderEnvLayers();
+  document.getElementById('envMapSubtitle').textContent = `${AIR_MONITORING_POINTS.length} estaciones aire · datos desde Excel`;
+}
+function downloadAirTemplate() {
+  const data = [];
+  AIR_MONITORING_POINTS.forEach(pt => pt.params.forEach(p => data.push({ 'Fecha': pt.fecha, 'Punto': pt.id, 'Parámetro': p.p, 'Valor': p.v, 'Unidad': p.u, 'Limite_legal': p.lim, 'Estado': p.s })));
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = [{wch:12},{wch:10},{wch:16},{wch:12},{wch:12},{wch:14},{wch:10}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'CalidadAire');
+  XLSX.writeFile(wb, 'plantilla_monitoreo_aire.xlsx');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  DETAIL MODAL SYSTEM
+// ═══════════════════════════════════════════════════════════════════
+
+let _mc  = null;
+let _mc2 = null;
+let CAMPANAS_LABELS = [];
+const MO = ['Ene','Feb','Mar','Abr','May','Jun'];
+
+// Chart config helpers
+function mkLine(labels, datasets, yCb) {
+  return { type:'line', data:{ labels, datasets:datasets.map(d=>({label:d.l,data:d.d,borderColor:d.c,backgroundColor:d.bg||'transparent',tension:0.4,pointRadius:d.dashed?0:3,borderDash:d.dashed?[5,3]:[],fill:!!d.bg}))},
+    options:{ responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{ x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11}}}, y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11},...(yCb?{callback:yCb}:{})}} } } };
+}
+function mkBar(labels, datasets, opts={}) {
+  return { type:'bar', data:{ labels, datasets:datasets.map(d=>({label:d.l,data:d.d,backgroundColor:d.c,borderRadius:3}))},
+    options:{ responsive:true,maintainAspectRatio:false,indexAxis:opts.h?'y':'x',plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11},...(opts.h&&opts.cb?{callback:opts.cb}:{})},stacked:!!opts.st,...(opts.max?{max:opts.max}:{})},
+        y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11},...(!opts.h&&opts.cb?{callback:opts.cb}:{})},stacked:!!opts.st}
+      } } };
+}
+function mkDoughnut(labels, data, colors) {
+  return { type:'doughnut', data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11},color:'#888',padding:10}}},cutout:'65%'} };
+}
+function mkStack(labels, datasets, yCb) {
+  return { type:'bar', data:{labels,datasets:datasets.map(d=>({label:d.l,data:d.d,backgroundColor:d.c,borderRadius:3}))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11},color:'#888',padding:10}}},
+      scales:{x:{stacked:true,grid:{color:gridColor},ticks:{color:tickColor,font:{size:11}}},y:{stacked:true,grid:{color:gridColor},ticks:{color:tickColor,font:{size:11},...(yCb?{callback:yCb}:{})}}}} };
+}
+
+const MODALS = {
+
+  // ── Vista Ejecutiva · KPI cards ──────────────────────────────────
+
+  'exec-gei': {
+    title:'Emisiones GEI', subtitle:'Alcance 1 + Alcance 2 · t CO₂e · Q2 2025',
+    hero:{v:'4.820',u:'t CO₂e',chg:'-8.3% vs Q1',dir:'up',st:'ok'},
+    chart: mkLine(MO,[
+      {l:'Emisiones reales',d:[2580,2570,2440,2320,2280,2230],c:'#1D9E75',bg:'rgba(29,158,117,0.08)'},
+      {l:'Meta mensual',d:[2700,2700,2700,2700,2700,2700],c:'#EF9F27',dashed:true}
+    ]),
+    th:['Mes','Alcance 1 (t)','Alcance 2 (t)','Total (t)','Meta (t)','Estado'],
+    td:[
+      ['Ene','1.600','980','2.580','2.700','<span class="badge badge-success">OK</span>'],
+      ['Feb','1.550','1.020','2.570','2.700','<span class="badge badge-success">OK</span>'],
+      ['Mar','1.480','960','2.440','2.700','<span class="badge badge-success">OK</span>'],
+      ['Abr','1.420','900','2.320','2.700','<span class="badge badge-success">OK</span>'],
+      ['May','1.390','890','2.280','2.700','<span class="badge badge-success">OK</span>'],
+      ['Jun','1.360','870','2.230','2.700','<span class="badge badge-success">OK</span>'],
+    ],
+    alerts:[
+      {lvl:'ok',txt:'Reducción del 13.6% en Alcance 1 desde enero — tendencia sostenida.'},
+      {lvl:'ok',txt:'Total Q2 (Ene–Jun): 13.420 t CO₂e — proyección anual 4.680 t, 10% por debajo de meta.'},
+    ]
+  },
+
+  'exec-agua': {
+    title:'Agua recirculada', subtitle:'Porcentaje reutilizado en proceso · Q2 2025',
+    hero:{v:'74.2',u:'%',chg:'+3.1pp vs Q1',dir:'up',st:'warning'},
+    chart: mkLine(MO,[
+      {l:'% Recirculado',d:[71.1,72.0,72.8,73.5,74.0,74.2],c:'#1D9E75',bg:'rgba(29,158,117,0.08)'},
+      {l:'Meta',d:[80,80,80,80,80,80],c:'#EF9F27',dashed:true}
+    ],v=>v+'%'),
+    th:['Mes','Captado (m³)','Recirculado (m³)','% Recirculado','Brecha vs meta'],
+    td:[
+      ['Ene','42.000','29.862','71.1%','-8.9pp'],['Feb','40.500','29.160','72.0%','-8.0pp'],
+      ['Mar','39.800','28.974','72.8%','-7.2pp'],['Abr','38.400','28.224','73.5%','-6.5pp'],
+      ['May','37.900','28.046','74.0%','-6.0pp'],['Jun','38.400','28.493','74.2%','-5.8pp'],
+    ],
+    alerts:[
+      {lvl:'warning',txt:'Brecha de 5.8pp respecto a meta de 80% — en ejecución plan de mejora de circuito cerrado.'},
+      {lvl:'ok',txt:'Mejora sostenida de +3.1pp desde Q1 — mantener iniciativas actuales de eficiencia.'},
+    ]
+  },
+
+  'exec-cumplimiento': {
+    title:'Cumplimiento regulatorio', subtitle:'Por componente ambiental · Q2 2025',
+    hero:{v:'91',u:'%',chg:'Sin variación vs Q1',dir:'neutral',st:'ok'},
+    chart: mkBar(['Calidad del aire','Gestión hídrica','Res. peligrosos','Est. relaves','Ruido'],
+      [{l:'%',d:[88,72,95,61,84],c:['#1D9E75','#EF9F27','#1D9E75','#E24B4A','#1D9E75']}],
+      {h:true,cb:v=>v+'%',max:100}),
+    th:['Componente','Cumplimiento','Meta','Estado','Tendencia'],
+    td:[
+      ['Calidad del aire','88%','≥ 85%','<span class="badge badge-success">OK</span>','↗ Mejorando'],
+      ['Gestión hídrica','72%','≥ 80%','<span class="badge badge-warning">Atención</span>','↗ Mejorando'],
+      ['Residuos peligrosos','95%','≥ 90%','<span class="badge badge-success">OK</span>','→ Estable'],
+      ['Estabilidad relaves','61%','≥ 80%','<span class="badge badge-danger">Alerta</span>','↘ Deteriorando'],
+      ['Ruido y vibraciones','84%','≥ 80%','<span class="badge badge-success">OK</span>','→ Estable'],
+    ],
+    alerts:[
+      {lvl:'danger',txt:'Estabilidad relaves al 61% y deteriorando — coordinar evaluación geotécnica urgente con especialistas externos.'},
+      {lvl:'warning',txt:'Gestión hídrica: recirculación mejora +3.1pp en Q2, pero aún 8pp bajo meta.'},
+    ]
+  },
+
+  'exec-inversion': {
+    title:'Inversión ambiental', subtitle:'Gasto e inversión en gestión ambiental · Q2 2025',
+    hero:{v:'$184k',u:'',chg:'+12% vs Q1',dir:'up',st:'ok'},
+    chart: mkBar(['Monitoreo','Remediación','Capacitación','Infra. verde','I+D'],[
+      {l:'Q1 2025',d:[28,42,18,30,6],c:'#9FE1CB'},
+      {l:'Q2 2025',d:[32,50,22,62,18],c:'#1D9E75'},
+    ],{cb:v=>'$'+v+'k'}),
+    th:['Categoría','Q1 2025','Q2 2025','Δ'],
+    td:[
+      ['Monitoreo ambiental','$28k','$32k','+14%'],['Remediación de pasivos','$42k','$50k','+19%'],
+      ['Capacitación RRHH','$18k','$22k','+22%'],['Infraestructura verde','$30k','$62k','+107%'],
+      ['I+D ambiental','$6k','$18k','+200%'],
+    ],
+    alerts:[
+      {lvl:'ok',txt:'Inversión total $184k — +12% vs Q1, alineado con plan anual de $700k.'},
+      {lvl:'ok',txt:'Mayor crecimiento en infraestructura verde (+107%) y I+D (+200%) — correcta priorización.'},
+    ]
+  },
+
+  // ── Vista Ejecutiva · Chart cards ───────────────────────────────
+
+  'exec-chart-emisiones': {
+    title:'Alcance de emisiones', subtitle:'Desglose mensual Alcance 1 y 2 · t CO₂e',
+    chart: mkStack(MO,[{l:'Alcance 1',d:[1600,1550,1480,1420,1390,1360],c:'#1D9E75'},{l:'Alcance 2',d:[980,1020,960,900,890,870],c:'#9FE1CB'}]),
+    th:['Mes','Alcance 1 (t)','Alcance 2 (t)','Total (t)','Reducción vs Ene'],
+    td:[
+      ['Ene','1.600','980','2.580','—'],['Feb','1.550','1.020','2.570','-0.4%'],
+      ['Mar','1.480','960','2.440','-5.4%'],['Abr','1.420','900','2.320','-10.1%'],
+      ['May','1.390','890','2.280','-11.6%'],['Jun','1.360','870','2.230','-13.6%'],
+    ],
+    alerts:[
+      {lvl:'ok',txt:'Alcance 1 redujo 15% desde enero — eficiencia en combustibles de proceso.'},
+      {lvl:'ok',txt:'Alcance 2 relativamente estable — revisar contrato de energía en Q3.'},
+    ]
+  },
+
+  'exec-chart-estado': {
+    title:'Estado regulatorio', subtitle:'Cumplimiento por componente ambiental · Q2 2025',
+    chart:{type:'bar',data:{labels:['Calidad del aire','Gestión hídrica','Res. peligrosos','Est. relaves','Ruido y vibraciones'],datasets:[{data:[88,72,95,61,84],backgroundColor:['#1D9E75','#EF9F27','#1D9E75','#E24B4A','#1D9E75'],borderRadius:3}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{max:100,grid:{color:gridColor},ticks:{color:tickColor,font:{size:11},callback:v=>v+'%'}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11}}}}}},
+    th:['Componente','% Cumplimiento','Meta','Estado'],
+    td:[
+      ['Calidad del aire','88%','≥ 85%','<span class="badge badge-success">OK</span>'],
+      ['Gestión hídrica','72%','≥ 80%','<span class="badge badge-warning">Atención</span>'],
+      ['Residuos peligrosos','95%','≥ 90%','<span class="badge badge-success">OK</span>'],
+      ['Estabilidad relaves','61%','≥ 80%','<span class="badge badge-danger">Alerta</span>'],
+      ['Ruido y vibraciones','84%','≥ 80%','<span class="badge badge-success">OK</span>'],
+    ],
+    alerts:[{lvl:'danger',txt:'Estabilidad relaves: componente más crítico — requiere plan de acción con cronograma.'}]
+  },
+
+  'exec-chart-tendencia': {
+    title:'Huella de carbono — tendencia anual', subtitle:'Proyección real vs meta regulatoria · t CO₂e',
+    chart: mkLine(MO,[
+      {l:'Proyección real',d:[5200,5050,4900,4820,4750,4680],c:'#1D9E75',bg:'rgba(29,158,117,0.08)'},
+      {l:'Meta regulatoria',d:[5200,5200,5200,5200,5200,5200],c:'#EF9F27',dashed:true}
+    ]),
+    th:['Mes','Proyección (t CO₂e)','Meta (t CO₂e)','Δ Meta','Estado'],
+    td:[
+      ['Ene','5.200','5.200','0%','<span class="badge badge-warning">En límite</span>'],
+      ['Feb','5.050','5.200','-2.9%','<span class="badge badge-success">OK</span>'],
+      ['Mar','4.900','5.200','-5.8%','<span class="badge badge-success">OK</span>'],
+      ['Abr','4.820','5.200','-7.3%','<span class="badge badge-success">OK</span>'],
+      ['May','4.750','5.200','-8.7%','<span class="badge badge-success">OK</span>'],
+      ['Jun','4.680','5.200','-10.0%','<span class="badge badge-success">OK</span>'],
+    ],
+    alerts:[
+      {lvl:'ok',txt:'Proyección anual 10% por debajo de meta desde junio — tendencia favorable.'},
+      {lvl:'ok',txt:'A este ritmo, cierre de año estimado: ~4.500 t CO₂e (13% bajo meta regulatoria).'},
+    ]
+  },
+
+  // ── Vista Operativa · Sensor cards ──────────────────────────────
+
+  'op-sensor-hidrico': {
+    title:'Consumo hídrico total', subtitle:'Captación de agua fresca · m³/mes',
+    hero:{v:'38.400',u:'m³/mes',chg:'64% del límite concesionado',dir:'neutral',st:'ok'},
+    chart: mkBar(MO,[{l:'Consumo',d:[42000,40500,39800,38400,37900,38400],c:'#378ADD'},{l:'Límite',d:[60000,60000,60000,60000,60000,60000],c:'rgba(0,0,0,0.08)'}],{cb:v=>v>=1000?(v/1000).toFixed(0)+'k':v}),
+    th:['Mes','Consumo (m³)','Límite (m³)','% Utilizado','Estado'],
+    td:[
+      ['Ene','42.000','60.000','70.0%','<span class="badge badge-warning">Atención</span>'],
+      ['Feb','40.500','60.000','67.5%','<span class="badge badge-success">OK</span>'],
+      ['Mar','39.800','60.000','66.3%','<span class="badge badge-success">OK</span>'],
+      ['Abr','38.400','60.000','64.0%','<span class="badge badge-success">OK</span>'],
+      ['May','37.900','60.000','63.2%','<span class="badge badge-success">OK</span>'],
+      ['Jun','38.400','60.000','64.0%','<span class="badge badge-success">OK</span>'],
+    ],
+    alerts:[
+      {lvl:'ok',txt:'Consumo en 64% del límite — margen de 36% disponible para operaciones.'},
+      {lvl:'ok',txt:'Reducción de 8.6% respecto a enero gracias a mejoras en eficiencia hídrica.'},
+    ]
+  },
+
+  'op-sensor-pm10': {
+    title:'Material particulado PM10', subtitle:'Promedio red de estaciones de monitoreo de aire · µg/m³',
+    hero:{v:'48.2',u:'µg/m³',chg:'80% del límite legal',dir:'neutral',st:'warning'},
+    chart: mkLine(['Sem 1','Sem 2','Sem 3','Sem 4','Sem 5','Sem 6'],[
+      {l:'PM10 promedio',d:[44.1,46.3,47.5,47.8,48.9,48.2],c:'#EF9F27',bg:'rgba(239,159,39,0.08)'},
+      {l:'Límite legal',d:[60,60,60,60,60,60],c:'#E24B4A',dashed:true}
+    ],v=>v+' µg/m³'),
+    th:['Estación','PM10 (µg/m³)','Límite','% del límite','Estado'],
+    td:[
+      ['Estación A-1 (norte)','52.4','60 µg/m³','87.3%','<span class="badge badge-warning">Atención</span>'],
+      ['Estación A-2 (este)','48.2','60 µg/m³','80.3%','<span class="badge badge-warning">Atención</span>'],
+      ['Estación A-3 (sur)','44.1','60 µg/m³','73.5%','<span class="badge badge-success">OK</span>'],
+      ['Estación A-4 (oeste)','38.8','60 µg/m³','64.7%','<span class="badge badge-success">OK</span>'],
+    ],
+    alerts:[
+      {lvl:'warning',txt:'Estación A-1 al 87% del límite — revisar vías de transporte y programa de humectación.'},
+      {lvl:'warning',txt:'Tendencia creciente en últimas 6 semanas — activar protocolo de alerta temprana.'},
+    ]
+  },
+
+  'op-sensor-recirculacion': {
+    title:'Agua recirculada en planta', subtitle:'Eficiencia de reutilización interna · %',
+    hero:{v:'74.2',u:'%',chg:'Meta: 80%',dir:'neutral',st:'warning'},
+    chart: mkLine(MO,[
+      {l:'% Recirculado',d:[71.1,72.0,72.8,73.5,74.0,74.2],c:'#1D9E75',bg:'rgba(29,158,117,0.08)'},
+      {l:'Meta',d:[80,80,80,80,80,80],c:'#EF9F27',dashed:true}
+    ],v=>v+'%'),
+    th:['Mes','Captado (m³)','Recirculado (m³)','% Recirculado','Brecha vs meta'],
+    td:[
+      ['Ene','42.000','29.862','71.1%','-8.9pp'],['Feb','40.500','29.160','72.0%','-8.0pp'],
+      ['Mar','39.800','28.974','72.8%','-7.2pp'],['Abr','38.400','28.224','73.5%','-6.5pp'],
+      ['May','37.900','28.046','74.0%','-6.0pp'],['Jun','38.400','28.493','74.2%','-5.8pp'],
+    ],
+    alerts:[
+      {lvl:'warning',txt:'Brecha de 5.8pp respecto a meta de 80% — plan de mejora en ejecución.'},
+      {lvl:'ok',txt:'Mejora sostenida +3.1pp desde Q1 — tendencia positiva.'},
+    ]
+  },
+
+  'op-sensor-ph': {
+    title:'pH aguas subterráneas', subtitle:'Red de pozos de monitoreo · último valor por pozo',
+    hero:{v:'5.8',u:'pH',chg:'Fuera de rango 6.5–8.5',dir:'neutral',st:'danger'},
+    chart: mkLine(['PZ-01','PZ-02','PZ-03','PZ-04','PZ-05','PZ-06'],[
+      {l:'pH por pozo',d:[7.2,6.9,5.8,7.4,6.8,7.1],c:'#1D9E75'},
+      {l:'Límite inferior',d:[6.5,6.5,6.5,6.5,6.5,6.5],c:'#E24B4A',dashed:true},
+      {l:'Límite superior',d:[8.5,8.5,8.5,8.5,8.5,8.5],c:'#EF9F27',dashed:true}
+    ],v=>'pH '+v),
+    th:['Pozo','Ubicación','pH medido','Rango legal','Estado','Fecha medición'],
+    td:[
+      ['PZ-01','Upstream norte','7.2','6.5–8.5','<span class="badge badge-success">OK</span>','30/05/2025'],
+      ['PZ-02','Upstream sur','6.9','6.5–8.5','<span class="badge badge-success">OK</span>','30/05/2025'],
+      ['PZ-03','Downstream','5.8','6.5–8.5','<span class="badge badge-danger">Alerta</span>','29/05/2025'],
+      ['PZ-04','Flanco este','7.4','6.5–8.5','<span class="badge badge-success">OK</span>','30/05/2025'],
+      ['PZ-05','Flanco sur','6.8','6.5–8.5','<span class="badge badge-success">OK</span>','30/05/2025'],
+      ['PZ-06','Planta trat.','7.1','6.5–8.5','<span class="badge badge-success">OK</span>','28/05/2025'],
+    ],
+    alerts:[
+      {lvl:'danger',txt:'PZ-03 (downstream) pH 5.8 — fuera del rango legal 6.5–8.5. Investigación en curso, muestreo diario activo.'},
+      {lvl:'ok',txt:'5 de 6 pozos dentro del rango legal — problema localizado en PZ-03.'},
+    ]
+  },
+
+  'op-sensor-energia': {
+    title:'Consumo energético', subtitle:'Total operaciones por fuente · MWh/mes',
+    hero:{v:'2.840',u:'MWh/mes',chg:'32% fuente renovable',dir:'neutral',st:'ok'},
+    chart: mkStack(MO,[{l:'Renovable',d:[820,850,880,908,910,908],c:'#1D9E75'},{l:'Convencional',d:[2100,2050,1980,1960,1920,1932],c:'#9FE1CB'}],v=>v+' MWh'),
+    th:['Mes','Renovable (MWh)','Convencional (MWh)','Total (MWh)','% Renovable'],
+    td:[
+      ['Ene','820','2.100','2.920','28.1%'],['Feb','850','2.050','2.900','29.3%'],
+      ['Mar','880','1.980','2.860','30.8%'],['Abr','908','1.960','2.868','31.7%'],
+      ['May','910','1.920','2.830','32.2%'],['Jun','908','1.932','2.840','32.0%'],
+    ],
+    alerts:[
+      {lvl:'warning',txt:'Energía renovable al 32% — objetivo 50% para fin de año requiere plan de contratación urgente.'},
+      {lvl:'ok',txt:'Consumo total estable en rango 2.830–2.920 MWh/mes — sin picos anómalos.'},
+    ]
+  },
+
+  'op-sensor-residuos': {
+    title:'Residuos reciclados', subtitle:'Porcentaje con disposición final de reciclaje · %',
+    hero:{v:'68',u:'%',chg:'Meta: 75%',dir:'neutral',st:'warning'},
+    chart: mkDoughnut(['Reciclados','Vertedero','Peligrosos'],[68,22,10],['#1D9E75','#EF9F27','#E24B4A']),
+    th:['Tipo de residuo','Toneladas','% del total','Meta','Estado'],
+    td:[
+      ['Reciclados','340 t','68%','≥ 75%','<span class="badge badge-warning">Atención</span>'],
+      ['Disposición en vertedero','110 t','22%','≤ 15%','<span class="badge badge-warning">Atención</span>'],
+      ['Residuos peligrosos','50 t','10%','≤ 10%','<span class="badge badge-success">OK</span>'],
+    ],
+    alerts:[
+      {lvl:'warning',txt:'Reciclaje al 68% — brecha de 7pp respecto a meta. Evaluar convenios con recicladores.'},
+      {lvl:'warning',txt:'Vertedero al 22% — supera meta máxima de 15%. Evaluar compostaje para fracción orgánica.'},
+    ]
+  },
+
+  // ── Vista Operativa · Chart cards ───────────────────────────────
+
+  'op-chart-balance': {
+    title:'Balance hídrico mensual', subtitle:'Agua captada vs recirculada · m³',
+    chart:{type:'bar',data:{labels:MO,datasets:[{label:'Captado',data:[42000,40500,39800,38400,37900,38400],backgroundColor:'#378ADD',borderRadius:3},{label:'Recirculado',data:[28000,29100,29500,28500,28000,28500],backgroundColor:'#1D9E75',borderRadius:3}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11},color:'#888',padding:10}}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11}}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11},callback:v=>v>=1000?(v/1000).toFixed(0)+'k':v}}}}},
+    th:['Mes','Captado (m³)','Recirculado (m³)','Ratio Rec/Cap','Brecha vs meta 80%'],
+    td:[
+      ['Ene','42.000','28.000','66.7%','-13.3pp'],['Feb','40.500','29.100','71.9%','-8.1pp'],
+      ['Mar','39.800','29.500','74.1%','-5.9pp'],['Abr','38.400','28.500','74.2%','-5.8pp'],
+      ['May','37.900','28.000','73.9%','-6.1pp'],['Jun','38.400','28.500','74.2%','-5.8pp'],
+    ],
+    alerts:[{lvl:'warning',txt:'Ratio recirculado/captado promedio Q2: 72.5% — meta es 80%.'}]
+  },
+
+  'op-chart-residuos': {
+    title:'Distribución de residuos', subtitle:'Por tipo de disposición final · toneladas Q2 2025',
+    chart: mkDoughnut(['Reciclados (68%)','Vertedero (22%)','Peligrosos (10%)'],[68,22,10],['#1D9E75','#EF9F27','#E24B4A']),
+    th:['Tipo','Q1 2025 (t)','Q2 2025 (t)','Δ','Estado'],
+    td:[
+      ['Reciclados','310','340','+9.7%','<span class="badge badge-success">OK</span>'],
+      ['Vertedero','125','110','-12.0%','<span class="badge badge-warning">Atención</span>'],
+      ['Peligrosos','48','50','+4.2%','<span class="badge badge-success">OK</span>'],
+    ],
+    alerts:[
+      {lvl:'ok',txt:'Reciclaje +9.7% vs Q1 — mejora sostenida.'},
+      {lvl:'warning',txt:'Vertedero al 22% total — supera meta máxima de 15%.'},
+    ]
+  },
+
+  // ── Vista Comunidad · KPI cards ─────────────────────────────────
+
+  'comm-kpi-trabajadores': {
+    title:'Trabajadores locales', subtitle:'Personal de origen local (NOA) vs total · Q2 2025',
+    hero:{v:'62',u:'%',chg:'+5pp vs Q1',dir:'up',st:'ok'},
+    chart: mkStack(['Personal directo','Contratos','Servicios'],[{l:'Local',d:[68,62,56],c:'#1D9E75'},{l:'Externo',d:[32,38,44],c:'#B4B2A9'}],v=>v+'%'),
+    th:['Categoría','Total','Locales','Externos','% Local','Meta'],
+    td:[
+      ['Personal directo','120','82','38','68.3%','≥ 60%'],
+      ['Contratos','85','53','32','62.4%','≥ 55%'],
+      ['Servicios tercerizados','60','34','26','56.7%','≥ 50%'],
+    ],
+    alerts:[
+      {lvl:'ok',txt:'62% de personal local — supera meta de 60% en las 3 categorías.'},
+      {lvl:'ok',txt:'+5pp vs Q1 gracias a programa de capacitación y certificación local activo.'},
+    ]
+  },
+
+  'comm-kpi-proveedores': {
+    title:'Proveedores locales', subtitle:'Proveedores de origen regional (NOA) · Q2 2025',
+    hero:{v:'41',u:'%',chg:'+2pp vs Q1',dir:'up',st:'ok'},
+    chart: mkStack(['Suministros','Servicios','Logística','Mantenimiento'],[{l:'Local',d:[45,52,28,38],c:'#1D9E75'},{l:'Nacional/Imp.',d:[55,48,72,62],c:'#B4B2A9'}],v=>v+'%'),
+    th:['Rubro','Proveedores locales','Total','% Local','Compras locales (USD)'],
+    td:[
+      ['Suministros operativos','9','20','45%','$48k'],['Servicios profesionales','14','27','52%','$72k'],
+      ['Logística y transporte','7','25','28%','$31k'],['Mantenimiento','8','21','38%','$28k'],
+    ],
+    alerts:[
+      {lvl:'ok',txt:'41% de proveedores son locales — +2pp vs Q1, tendencia positiva.'},
+      {lvl:'warning',txt:'Logística local al 28% — oportunidad de desarrollo de transportistas regionales.'},
+    ]
+  },
+
+  'comm-kpi-incidentes': {
+    title:'Incidentes ambientales abiertos', subtitle:'Quejas y reclamos de la comunidad · estado actual',
+    hero:{v:'3',u:'abiertos',chg:'1 nuevo esta semana',dir:'neutral',st:'warning'},
+    chart: mkBar(['Feb','Mar','Abr','May','Jun'],[
+      {l:'Abiertos al cierre',d:[2,1,3,2,3],c:'#E24B4A'},
+      {l:'Resueltos en período',d:[3,4,2,3,1],c:'#1D9E75'}
+    ]),
+    th:['Incidente','Fecha reporte','Tipo','Estado','Días abierto'],
+    td:[
+      ['Polvo en ruta de camiones','28/05/2025','Contaminación aire','<span class="badge badge-danger">Abierto</span>','5 días'],
+      ['Ruido nocturno en operaciones','15/05/2025','Ruido y vibración','<span class="badge badge-warning">En proceso</span>','18 días'],
+      ['Vibración por voladuras','18/05/2025','Ruido y vibración','<span class="badge badge-warning">En proceso</span>','15 días'],
+    ],
+    alerts:[
+      {lvl:'danger',txt:'Incidente de polvo (28/05) sin primera acción documentada — vence SLA de 5 días hoy.'},
+      {lvl:'warning',txt:'2 incidentes de ruido/vibración con vecinos Zona Norte — mediación comunitaria sugerida.'},
+    ]
+  },
+
+  'comm-kpi-respuesta': {
+    title:'Tiempo de respuesta a incidentes', subtitle:'Desde reporte hasta primera acción · días promedio',
+    hero:{v:'4.2',u:'días',chg:'Meta: ≤ 5 días',dir:'up',st:'ok'},
+    chart: mkLine(MO,[
+      {l:'Tiempo respuesta (días)',d:[6.1,5.8,5.2,4.9,4.5,4.2],c:'#1D9E75',bg:'rgba(29,158,117,0.08)'},
+      {l:'Meta máxima',d:[5,5,5,5,5,5],c:'#EF9F27',dashed:true}
+    ],v=>v+' días'),
+    th:['Mes','Incidentes','Resueltos en plazo','% En plazo','Tiempo prom. (días)'],
+    td:[
+      ['Ene','5','2','40%','6.1'],['Feb','4','2','50%','5.8'],['Mar','4','3','75%','5.2'],
+      ['Abr','5','4','80%','4.9'],['May','4','4','100%','4.5'],['Jun','3','3','100%','4.2'],
+    ],
+    alerts:[
+      {lvl:'ok',txt:'Tiempo promedio 4.2 días — por debajo de meta de 5 días desde mayo.'},
+      {lvl:'ok',txt:'100% de incidentes de mayo y junio resueltos en plazo.'},
+    ]
+  },
+
+  // ── Vista Comunidad · Chart cards ───────────────────────────────
+
+  'comm-chart-empleo': {
+    title:'Empleo e impacto local', subtitle:'Distribución por categoría y origen · Q2 2025',
+    chart:{type:'bar',data:{labels:['Personal directo','Contratos','Proveedores'],datasets:[{label:'Local',data:[62,58,41],backgroundColor:'#1D9E75',borderRadius:3},{label:'Externo',data:[38,42,59],backgroundColor:'#B4B2A9',borderRadius:3}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11},color:'#888',padding:10}}},scales:{x:{stacked:true,grid:{color:gridColor},ticks:{color:tickColor,font:{size:11}}},y:{stacked:true,max:100,grid:{color:gridColor},ticks:{color:tickColor,font:{size:11},callback:v=>v+'%'}}}}},
+    th:['Categoría','% Local','% Externo','Meta local','Estado'],
+    td:[
+      ['Personal directo','62%','38%','≥ 60%','<span class="badge badge-success">OK</span>'],
+      ['Contratos','58%','42%','≥ 55%','<span class="badge badge-success">OK</span>'],
+      ['Proveedores','41%','59%','≥ 35%','<span class="badge badge-success">OK</span>'],
+    ],
+    alerts:[
+      {lvl:'ok',txt:'Las 3 categorías superan sus respectivas metas de empleo local.'},
+      {lvl:'ok',txt:'Impacto económico estimado en comunidad NOA: $1.2M en salarios locales Q2.'},
+    ]
+  },
+
+  'comm-chart-quejas': {
+    title:'Quejas y reclamos ambientales', subtitle:'Detalle por incidente · estado actual',
+    th:['Incidente','Tipo','Reportado','Estado','Responsable'],
+    td:[
+      ['Polvo en ruta (Sector Norte)','Aire','28/05/2025','<span class="badge badge-danger">Abierto</span>','Operaciones'],
+      ['Ruido nocturno en operaciones','Ruido','15/05/2025','<span class="badge badge-warning">En proceso</span>','RRHH + Ops'],
+      ['Turbidez canal de riego','Agua','02/05/2025','<span class="badge badge-success">Resuelto</span>','Ambiental'],
+      ['Vibración por voladuras','Vibración','18/05/2025','<span class="badge badge-warning">En proceso</span>','Mina'],
+    ],
+    alerts:[
+      {lvl:'danger',txt:'Incidente de polvo (28/05) — sin primera acción documentada. Vence SLA hoy.'},
+      {lvl:'ok',txt:'Turbidez canal resuelto el 28/05 — único incidente cerrado en el período.'},
+      {lvl:'warning',txt:'2 incidentes de ruido/vibración activos en Zona Norte — coordinar mediación.'},
+    ]
+  },
+
+  'comm-chart-inversion': {
+    title:'Inversión social y ambiental comunitaria', subtitle:'Por categoría comparativo Q1 vs Q2 · USD',
+    chart:{type:'bar',data:{labels:['Educación','Salud','Infraestructura','Medio ambiente','Cultura'],datasets:[{label:'Q1 2025',data:[40000,28000,22000,34000,14000],backgroundColor:'#9FE1CB',borderRadius:3},{label:'Q2 2025',data:[48000,32000,27000,41000,18000],backgroundColor:'#1D9E75',borderRadius:3}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:11},color:'#888',padding:10}}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11}}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:11},callback:v=>'$'+(v/1000).toFixed(0)+'k'}}}}},
+    th:['Categoría','Q1 2025','Q2 2025','Δ','Beneficiarios est.'],
+    td:[
+      ['Educación','$40k','$48k','+20%','480 familias'],['Salud','$28k','$32k','+14%','320 personas'],
+      ['Infraestructura','$22k','$27k','+23%','Comunidad Río X'],
+      ['Medio ambiente','$34k','$41k','+21%','—'],['Cultura','$14k','$18k','+29%','Municipio'],
+    ],
+    alerts:[
+      {lvl:'ok',txt:'Inversión total Q2: $166k — +20% respecto a Q1 en todas las categorías.'},
+      {lvl:'ok',txt:'Cultura con mayor crecimiento (+29%) — apoyo a festival regional NOA.'},
+    ]
+  },
+
+  // ── Módulo Calidad del Aire ──────────────────────────────────────
+
+  'op-aire-resumen': {
+    title:'Calidad del aire — Resumen de estaciones', subtitle:'5 estaciones activas · NOA Puna · Q2 2025',
+    chart: mkBar(
+      ['A-1 Chancado','A-2 Camino','A-3 Voladura','A-4 Comunidad','A-5 Referencia'],
+      [{l:'PM10 (µg/m³)', d:[52.4,48.2,78.6,32.1,18.4],
+        c:['#EF9F27','#EF9F27','#E24B4A','#1D9E75','#1D9E75']}],
+      {cb:v=>v+' µg/m³'}
+    ),
+    th:['Estación','Tipo','PM10','PM2.5','SO₂','NOₓ','Estado'],
+    td:[
+      ['A-1','Chancado','52.4 µg/m³','22.4 µg/m³','8.2 µg/m³','24.1 µg/m³','<span class="badge badge-warning">Atención</span>'],
+      ['A-2','Camino','48.2 µg/m³','18.1 µg/m³','6.4 µg/m³','38.6 µg/m³','<span class="badge badge-warning">Atención</span>'],
+      ['A-3','Voladura','78.6 µg/m³','28.4 µg/m³','42.1 µg/m³','68.3 µg/m³','<span class="badge badge-danger">Alerta</span>'],
+      ['A-4','Residencial','32.1 µg/m³','12.8 µg/m³','4.2 µg/m³','14.6 µg/m³','<span class="badge badge-success">OK</span>'],
+      ['A-5','Referencia','18.4 µg/m³','7.2 µg/m³','2.1 µg/m³','6.8 µg/m³','<span class="badge badge-success">OK</span>'],
+    ],
+    alerts:[
+      {lvl:'danger',txt:'A-3 (zona voladura) PM10 78.6 µg/m³ — supera límite de 60 µg/m³. Post-voladura 29/05. Medición de seguimiento requerida.'},
+      {lvl:'warning',txt:'A-1 (chancado) y A-2 (camino) en atención — 87% y 80% del límite PM10. Activar plan de humectación.'},
+      {lvl:'ok',txt:'Receptor sensible A-4 (comunidad) dentro de todos los límites legales — exposición comunitaria aceptable.'},
+    ]
+  },
+
+};
+
+// ── Modal render ────────────────────────────────────────────────────
+
+function openModal(id) {
+  const cfg = MODALS[id];
+  if (!cfg) return;
+
+  document.getElementById('modalTitle').textContent    = cfg.title;
+  document.getElementById('modalSubtitleEl').textContent = cfg.subtitle;
+
+  const icons = { ok:'ti-circle-check', warning:'ti-alert-triangle', danger:'ti-alert-octagon' };
+  let html = '';
+
+  if (cfg.hero) {
+    const H = cfg.hero;
+    const dc = H.dir==='up' ? 'up' : H.dir==='neutral' ? 'neutral' : 'down-bad';
+    const di = H.dir==='up' ? 'ti-trending-up' : H.dir==='neutral' ? 'ti-minus' : 'ti-trending-down';
+    const sc = H.st==='ok' ? '#1D9E75' : H.st==='warning' ? '#EF9F27' : '#E24B4A';
+    html += `<div class="modal-hero">
+      <div style="width:5px;height:44px;border-radius:3px;background:${sc};flex-shrink:0;"></div>
+      <div style="flex:1;padding-left:4px;">
+        <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">${cfg.title}</div>
+        <div class="modal-hero-val">${H.v}<span class="modal-hero-unit">${H.u}</span></div>
+      </div>
+      <div class="modal-hero-chg ${dc}"><i class="ti ${di}" style="font-size:14px;"></i>${H.chg}</div>
+    </div>`;
+  }
+
+  if (cfg.chart) {
+    html += `<div class="modal-section-label">Tendencia</div>
+      <div class="modal-chart-wrap"><canvas id="modalCanvas"></canvas></div>`;
+  }
+
+  if (cfg.th && cfg.td) {
+    html += `<div class="modal-section-label" style="margin-top:${cfg.chart?'0':'0'};">Datos históricos</div>
+      <table class="modal-table">
+        <thead><tr>${cfg.th.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>${cfg.td.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>`;
+  }
+
+  if (cfg.alerts && cfg.alerts.length) {
+    html += `<div class="modal-section-label">Alertas</div>
+      <div class="modal-alerts">${cfg.alerts.map(a=>`<div class="modal-alert ${a.lvl}"><i class="ti ${icons[a.lvl]}" style="font-size:15px;flex-shrink:0;"></i><span>${a.txt}</span></div>`).join('')}</div>`;
+  }
+
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('detailModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  if (cfg.chart) {
+    requestAnimationFrame(() => {
+      if (_mc) { _mc.destroy(); _mc = null; }
+      const canvas = document.getElementById('modalCanvas');
+      if (canvas) _mc = new Chart(canvas, cfg.chart);
+    });
+  }
+}
+
+function closeModal() {
+  document.getElementById('detailModal').classList.remove('open');
+  document.body.style.overflow = '';
+  if (_mc)  { _mc.destroy();  _mc  = null; }
+  if (_mc2) { _mc2.destroy(); _mc2 = null; }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ═══════════════════════════════════════════════════════════════════
+//  DEMO DATA — carga dinámica desde demo-data.json
+// ═══════════════════════════════════════════════════════════════════
+
+const BADGE = { ok:'badge-success', warning:'badge-warning', danger:'badge-danger' };
+const BADGE_LABEL = { ok:'OK', warning:'Atención', danger:'Alerta' };
+
+function renderOperativeTable() {
+  const tbody = document.getElementById('monitorTableBody');
+  if (!tbody || !MONITORING_POINTS.length) return;
+
+  // Para cada pozo, encontrar el parámetro con mayor severidad
+  const severity = { danger: 2, warning: 1, ok: 0 };
+  const rows = MONITORING_POINTS.map(pt => {
+    const worst = pt.params.reduce((a, b) =>
+      (severity[b.s] > severity[a.s]) ? b : a
+    );
+    return { pt, worst, sev: severity[worst.s] };
+  });
+  rows.sort((a, b) => b.sev - a.sev);
+
+  tbody.innerHTML = rows.map(({ pt, worst }) => `
+    <tr>
+      <td>${pt.name}</td>
+      <td>${worst.p}</td>
+      <td>${worst.v} ${worst.u}</td>
+      <td>${worst.lim}</td>
+      <td><span class="badge ${BADGE[worst.s]}">${BADGE_LABEL[worst.s]}</span></td>
+      <td>${pt.fecha}</td>
+    </tr>`).join('');
+}
+
+function buildPhModal() {
+  const pts = MONITORING_POINTS;
+  if (!pts.length) return;
+
+  const phData = pts.map(pt => {
+    const p = pt.params.find(x => x.p === 'pH');
+    return p ? { id: pt.id, name: pt.name, v: p.v, s: p.s, fecha: pt.fecha } : null;
+  }).filter(Boolean);
+
+  const outOfRange = phData.filter(x => x.s === 'danger');
+  const worst = outOfRange.length
+    ? outOfRange.reduce((a, b) => {
+        const distA = Math.max(6.5 - a.v, 0) + Math.max(a.v - 8.5, 0);
+        const distB = Math.max(6.5 - b.v, 0) + Math.max(b.v - 8.5, 0);
+        return distB > distA ? b : a;
+      })
+    : phData[0];
+
+  MODALS['op-sensor-ph'] = {
+    title: 'pH aguas subterráneas',
+    subtitle: `Red de ${pts.length} pozos · Campaña Dic 2024 · Ley N° 24585`,
+    hero: {
+      v: worst.v.toFixed(2),
+      u: 'UpH',
+      chg: outOfRange.length
+        ? `${outOfRange.length} de ${phData.length} pozos fuera de rango 6.5–8.5`
+        : 'Todos los pozos dentro del rango legal',
+      dir: outOfRange.length ? 'neutral' : 'up',
+      st:  outOfRange.length ? 'danger'  : 'ok'
+    },
+    chart: mkLine(
+      phData.map(x => x.id),
+      [
+        { l: 'pH por pozo',        d: phData.map(x => x.v),                          c: '#1D9E75' },
+        { l: 'Límite inferior 6.5', d: Array(phData.length).fill(6.5),               c: '#E24B4A', dashed: true },
+        { l: 'Límite superior 8.5', d: Array(phData.length).fill(8.5),               c: '#EF9F27', dashed: true }
+      ],
+      v => 'pH ' + v
+    ),
+    th: ['Pozo', 'pH medido', 'Rango legal', 'Estado', 'Fecha'],
+    td: phData.map(x => [
+      x.name,
+      x.v.toFixed(2),
+      '6.5–8.5',
+      `<span class="badge ${BADGE[x.s]}">${BADGE_LABEL[x.s]}</span>`,
+      x.fecha
+    ]),
+    alerts: [
+      ...outOfRange.map(x => ({
+        lvl: 'danger',
+        txt: `${x.name}: pH ${x.v.toFixed(2)} — ${x.v < 6.5 ? 'por debajo' : 'por encima'} del rango legal 6.5–8.5.`
+      })),
+      {
+        lvl: outOfRange.length ? 'warning' : 'ok',
+        txt: outOfRange.length
+          ? `${phData.length - outOfRange.length} de ${phData.length} pozos dentro del rango. ${outOfRange.length} con excedencia — posible origen geogénico o mineral.`
+          : `Todos los ${phData.length} pozos dentro del rango legal.`
+      }
+    ]
+  };
+
+  // Actualizar tile del sensor card
+  const valEl  = document.getElementById('sensorPhVal');
+  const barEl  = document.getElementById('sensorPhBar');
+  const noteEl = document.getElementById('sensorPhNote');
+  if (valEl)  valEl.innerHTML = `${worst.v.toFixed(2)} <span class="sensor-unit">pH</span>`;
+  if (noteEl) {
+    noteEl.textContent = outOfRange.length
+      ? `${outOfRange.length} de ${phData.length} pozos fuera de rango`
+      : 'Todos los pozos en rango';
+    noteEl.className = `sensor-note ${outOfRange.length ? 'danger' : ''}`;
+  }
+  if (barEl) {
+    const pct = Math.round(outOfRange.length / phData.length * 100);
+    barEl.style.background = outOfRange.length ? '#E24B4A' : '#1D9E75';
+    barEl.style.width = pct + '%';
+  }
+}
+
+function buildAsModal() {
+  const pts = MONITORING_POINTS;
+  if (!pts.length) return;
+
+  const asData = pts.map(pt => {
+    const p = pt.params.find(x => x.p === 'Arsénico Total');
+    return p ? { id: pt.id, name: pt.name, v: p.v, s: p.s, fecha: pt.fecha } : null;
+  }).filter(Boolean);
+
+  const danger = asData.filter(x => x.s === 'danger');
+  const worst  = asData.reduce((a, b) => b.v > a.v ? b : a);
+  const LIMIT  = 50;
+
+  MODALS['op-sensor-as'] = {
+    title: 'Arsénico Total',
+    subtitle: `Red de ${pts.length} pozos · Campaña Dic 2024 · Ley N° 24585 · Límite bebida humana: ≤ 50 µg/L`,
+    hero: {
+      v: worst.v.toLocaleString('es-AR'),
+      u: 'µg/L',
+      chg: `${danger.length} de ${asData.length} pozos superan el límite legal`,
+      dir: 'neutral',
+      st:  danger.length ? 'danger' : 'ok'
+    },
+    chart: mkLine(
+      asData.map(x => x.id),
+      [
+        { l: 'Arsénico Total', d: asData.map(x => x.v),             c: '#E24B4A' },
+        { l: 'Límite ≤ 50 µg/L', d: Array(asData.length).fill(LIMIT), c: '#EF9F27', dashed: true }
+      ],
+      v => v + ' µg/L'
+    ),
+    th: ['Pozo', 'As Total (µg/L)', 'Límite legal', 'Excedencia', 'Estado', 'Fecha'],
+    td: asData.map(x => {
+      const exc = x.v > LIMIT ? `${(x.v / LIMIT).toFixed(0)}× el límite` : '—';
+      return [
+        x.name,
+        x.v.toLocaleString('es-AR'),
+        '≤ 50',
+        exc,
+        `<span class="badge ${BADGE[x.s]}">${BADGE_LABEL[x.s]}</span>`,
+        x.fecha
+      ];
+    }),
+    alerts: [
+      {
+        lvl: 'danger',
+        txt: `${danger.length} de ${asData.length} pozos superan el límite de 50 µg/L para bebida humana (Ley N° 24585). Valor máximo: ${worst.v.toLocaleString('es-AR')} µg/L en ${worst.name} (${(worst.v / LIMIT).toFixed(0)}× el límite).`
+      },
+      {
+        lvl: 'warning',
+        txt: `El arsénico en esta zona tiene origen geogénico — deriva de la geología volcánica de la Puna. No indica impacto de la operación minera. Requiere monitoreo periódico y reporte regulatorio.`
+      },
+      {
+        lvl: 'ok',
+        txt: `${asData.length - danger.length} pozo${asData.length - danger.length !== 1 ? 's' : ''} dentro del límite legal: ${asData.filter(x => x.s !== 'danger').map(x => x.name).join(', ')}.`
+      }
+    ]
+  };
+
+  const iconEl = document.getElementById('sensorAsIcon');
+  const valEl  = document.getElementById('sensorAsVal');
+  const barEl  = document.getElementById('sensorAsBar');
+  const noteEl = document.getElementById('sensorAsNote');
+
+  if (valEl)  valEl.innerHTML = `${worst.v.toLocaleString('es-AR')} <span class="sensor-unit">µg/L</span>`;
+  if (barEl) {
+    barEl.style.background = '#E24B4A';
+    barEl.style.width = Math.round(danger.length / asData.length * 100) + '%';
+  }
+  if (noteEl) {
+    noteEl.className = 'sensor-note danger';
+    noteEl.textContent = `${danger.length} de ${asData.length} pozos en alerta`;
+  }
+}
+
+function buildOdModal() {
+  const pts = MONITORING_POINTS;
+  if (!pts.length) return;
+
+  const odData = pts.map(pt => {
+    const p = pt.params.find(x => x.p === 'Oxígeno Disuelto');
+    return p ? { id: pt.id, name: pt.name, v: p.v, s: p.s, fecha: pt.fecha } : null;
+  }).filter(Boolean);
+
+  const danger  = odData.filter(x => x.s === 'danger');
+  const warning = odData.filter(x => x.s === 'warning');
+  const worst   = odData.reduce((a, b) => b.v < a.v ? b : a);
+  const issues  = danger.length + warning.length;
+
+  MODALS['op-sensor-od'] = {
+    title: 'Oxígeno Disuelto',
+    subtitle: `Red de ${pts.length} pozos · Campaña Dic 2024 · Límite: ≥ 5.000 µg/L`,
+    hero: {
+      v: worst.v.toLocaleString('es-AR'),
+      u: 'µg/L',
+      chg: issues
+        ? `${danger.length ? danger.length + ' alerta' + (danger.length > 1 ? 's' : '') : ''}${danger.length && warning.length ? ' · ' : ''}${warning.length ? warning.length + ' atención' : ''} de ${odData.length} pozos`
+        : `Todos los pozos sobre el límite mínimo`,
+      dir: danger.length ? 'neutral' : warning.length ? 'neutral' : 'up',
+      st:  danger.length ? 'danger'  : warning.length ? 'warning'  : 'ok'
+    },
+    chart: mkLine(
+      odData.map(x => x.id),
+      [
+        { l: 'OD por pozo',       d: odData.map(x => x.v),                c: '#378ADD' },
+        { l: 'Límite mínimo 5000', d: Array(odData.length).fill(5000),    c: '#E24B4A', dashed: true }
+      ],
+      v => v + ' µg/L'
+    ),
+    th: ['Pozo', 'OD (µg/L)', 'Límite', 'Estado', 'Fecha'],
+    td: odData.map(x => [
+      x.name,
+      x.v.toLocaleString('es-AR'),
+      '≥ 5.000',
+      `<span class="badge ${BADGE[x.s]}">${BADGE_LABEL[x.s]}</span>`,
+      x.fecha
+    ]),
+    alerts: [
+      ...danger.map(x => ({
+        lvl: 'danger',
+        txt: `${x.name}: OD ${x.v.toLocaleString('es-AR')} µg/L — por debajo del umbral crítico de 5.000 µg/L (${((x.v/5000)*100).toFixed(0)}% del límite).`
+      })),
+      ...warning.map(x => ({
+        lvl: 'warning',
+        txt: `${x.name}: OD ${x.v.toLocaleString('es-AR')} µg/L — por debajo del límite mínimo, monitoreo intensificado recomendado.`
+      })),
+      {
+        lvl: issues ? 'ok' : 'ok',
+        txt: issues
+          ? `${odData.length - issues} de ${odData.length} pozos cumplen el límite. Valores bajos de OD pueden indicar actividad microbiana o estratificación del acuífero.`
+          : `Todos los pozos por encima de 5.000 µg/L.`
+      }
+    ]
+  };
+
+  // Actualizar tile del sensor card
+  const iconEl = document.getElementById('sensorOdIcon');
+  const valEl  = document.getElementById('sensorOdVal');
+  const barEl  = document.getElementById('sensorOdBar');
+  const noteEl = document.getElementById('sensorOdNote');
+
+  const tileColor = danger.length ? '#E24B4A' : warning.length ? '#EF9F27' : '#1D9E75';
+  if (iconEl) iconEl.style.color = tileColor;
+  if (valEl)  valEl.innerHTML = `${worst.v.toLocaleString('es-AR')} <span class="sensor-unit">µg/L</span>`;
+  if (barEl) {
+    barEl.style.background = tileColor;
+    barEl.style.width = Math.round((worst.v / 8000) * 100) + '%';
+  }
+  if (noteEl) {
+    noteEl.className = `sensor-note${danger.length ? ' danger' : warning.length ? ' warn' : ''}`;
+    noteEl.textContent = issues
+      ? `${danger.length ? danger.length + ' alerta · ' : ''}${warning.length ? warning.length + ' atención ' : ''}de ${odData.length} pozos`
+      : `Todos los pozos en rango`;
+  }
+}
+
+function buildExecutiveKPIs(data) {
+  const k   = data.exec_kpis;
+  const pts = data.puntos_agua;
+
+  const DIR = {
+    'up':        { icon: 'ti-trending-up',   cls: 'kpi-up'       },
+    'down-good': { icon: 'ti-trending-down', cls: 'kpi-up'       },
+    'down-bad':  { icon: 'ti-trending-down', cls: 'kpi-down-bad' },
+    'neutral':   { icon: 'ti-minus',         cls: 'kpi-neutral'  },
+  };
+
+  function setKpi(valId, chgId, valHtml, chgTxt, dir) {
+    const vEl = document.getElementById(valId);
+    const cEl = document.getElementById(chgId);
+    const d   = DIR[dir] || DIR.neutral;
+    if (vEl) vEl.innerHTML = valHtml;
+    if (cEl) {
+      cEl.className = `kpi-change ${d.cls}`;
+      cEl.innerHTML = `<i class="ti ${d.icon}" style="font-size:13px;"></i> ${chgTxt}`;
+    }
+  }
+
+  // GEI — valor desde JSON
+  setKpi('kpiGeiVal', 'kpiGeiChg',
+    `${k.gei.v.toLocaleString('es-AR')} <span>t CO₂e</span>`,
+    k.gei.chg, k.gei.dir
+  );
+
+  // Agua recirculada — valor desde JSON
+  setKpi('kpiAguaVal', 'kpiAguaChg',
+    `${k.recirculacion.v} <span>%</span>`,
+    k.recirculacion.chg, k.recirculacion.dir
+  );
+
+  // Cumplimiento — porcentaje del JSON · nota computada desde pozos reales
+  const okPozos  = pts.filter(pt => pointStatus(pt) === 'ok').length;
+  const pctAgua  = Math.round(okPozos / pts.length * 100);
+  const aguaCls  = pctAgua >= 50 ? 'neutral' : 'down-bad';
+  setKpi('kpiCumplVal', 'kpiCumplChg',
+    `${k.cumplimiento.v} <span>%</span>`,
+    `Agua subterránea: ${pctAgua}% (${okPozos}/${pts.length} pozos)`, aguaCls
+  );
+
+  // Inversión — formateado como "$184k"
+  const invK = Math.round(k.inversion.v / 1000);
+  setKpi('kpiInvVal', 'kpiInvChg',
+    `$${invK}k`,
+    k.inversion.chg, k.inversion.dir
+  );
+}
+
+function buildComparativeTable() {
+  const tbody = document.getElementById('compTableBody');
+  if (!tbody || !MONITORING_POINTS.length) return;
+
+  const severity = { danger: 2, warning: 1, ok: 0 };
+  const sorted = [...MONITORING_POINTS].sort((a, b) => {
+    const sa = Math.max(...a.params.map(p => severity[p.s] ?? 0));
+    const sb = Math.max(...b.params.map(p => severity[p.s] ?? 0));
+    return sb - sa;
+  });
+
+  const CELL_STYLE = {
+    danger:  'background:#FCEBEB;color:#501313;',
+    warning: 'background:#FAEEDA;color:#633806;',
+    ok:      'background:#E1F5EE;color:#085041;',
+  };
+  const ROW_BORDER = 'border-bottom:0.5px solid rgba(0,0,0,0.05);';
+
+  function paramCell(p, fmtFn) {
+    if (!p) return `<td style="padding:6px 10px;text-align:right;font-size:11px;color:#ccc;${ROW_BORDER}">—</td>`;
+    const noLimit = p.lim === 'Sin límite' || p.lim === 'Referencia';
+    const style = noLimit ? 'color:#555;' : (CELL_STYLE[p.s] || '');
+    return `<td style="padding:6px 10px;text-align:right;font-size:11px;font-weight:500;white-space:nowrap;${ROW_BORDER}${style}">${fmtFn(p)}</td>`;
+  }
+
+  tbody.innerHTML = sorted.map(pt => {
+    const g  = name => pt.params.find(x => x.p === name);
+    const pH = g('pH');
+    const od = g('Oxígeno Disuelto');
+    const cd = g('Conductividad');
+    const as = g('Arsénico Total');
+    const li = g('Litio Disuelto');
+    const st = pointStatus(pt);
+
+    return `<tr onclick="openWellModal('${pt.id}')" style="cursor:pointer;transition:background 0.1s;" onmouseover="this.style.background='#f5f5f3'" onmouseout="this.style.background=''">
+      <td style="padding:6px 12px;font-size:12px;font-weight:500;${ROW_BORDER}white-space:nowrap;">${pt.name}</td>
+      <td style="padding:6px 12px;font-size:11px;color:#888;${ROW_BORDER}white-space:nowrap;">${pt.type}</td>
+      ${paramCell(pH, p => p.v.toFixed(2))}
+      ${paramCell(od, p => p.v.toLocaleString('es-AR'))}
+      ${paramCell(cd, p => p.v.toLocaleString('es-AR'))}
+      ${paramCell(as, p => p.v.toLocaleString('es-AR'))}
+      ${paramCell(li, p => p.v.toLocaleString('es-AR'))}
+      <td style="padding:6px 12px;text-align:center;${ROW_BORDER}"><span class="badge ${BADGE[st]}">${BADGE_LABEL[st]}</span></td>
+    </tr>`;
+  }).join('');
+
+  const sub = document.getElementById('compTableSubtitle');
+  if (sub) sub.textContent = `${sorted.length} pozos · 5 parámetros · Campaña Dic 2024`;
+}
+
+function openWellModal(id) {
+  const pt = MONITORING_POINTS.find(p => p.id === id);
+  if (!pt) return;
+
+  const st      = pointStatus(pt);
+  const icons   = { ok:'ti-circle-check', warning:'ti-alert-triangle', danger:'ti-alert-octagon' };
+
+  document.getElementById('modalTitle').textContent      = pt.name;
+  document.getElementById('modalSubtitleEl').textContent = `${pt.type} · ${pt.desc} · Medición: ${pt.fecha}`;
+
+  // Compliance % por parámetro regulado (para el gráfico de barras)
+  function compliance(p) {
+    if (p.p === 'pH') {
+      if (p.v >= 6.5 && p.v <= 8.5) return 100;
+      const dev = Math.max(6.5 - p.v, p.v - 8.5, 0);
+      return Math.max(0, Math.round(100 - dev * 15));
+    }
+    if (p.p === 'Oxígeno Disuelto') return Math.min(100, Math.round(p.v / 5000 * 100));
+    if (p.p === 'Arsénico Total')   return Math.max(0, Math.min(100, Math.round(50 / Math.max(p.v, 0.01) * 100)));
+    return 100;
+  }
+
+  const regulated = pt.params.filter(p => p.lim !== 'Sin límite' && p.lim !== 'Referencia');
+  const chartCfg = {
+    type: 'bar',
+    data: {
+      labels: regulated.map(p => p.p),
+      datasets: [{
+        data: regulated.map(compliance),
+        backgroundColor: regulated.map(p => STATUS_COLOR[p.s] + 'BB'),
+        borderColor:     regulated.map(p => STATUS_COLOR[p.s]),
+        borderWidth: 1.5, borderRadius: 4,
+      }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { min:0, max:100, grid:{color:gridColor}, ticks:{color:tickColor,font:{size:11},callback:v=>v+'%'} },
+        y: { grid:{color:gridColor}, ticks:{color:tickColor,font:{size:11}} }
+      }
+    }
+  };
+
+  // Tabla de todos los parámetros con excedencia
+  const paramRows = pt.params.map(p => {
+    const noLimit = p.lim === 'Sin límite' || p.lim === 'Referencia';
+    let exc = '—';
+    if (!noLimit) {
+      if (p.p === 'Arsénico Total' && p.v > 50)       exc = `${(p.v/50).toFixed(0)}× el límite`;
+      else if (p.p === 'Oxígeno Disuelto' && p.v < 5000) exc = `${Math.round((5000-p.v)/5000*100)}% bajo mín.`;
+      else if (p.p === 'pH' && (p.v < 6.5 || p.v > 8.5)) {
+        const dev = Math.max(6.5-p.v, p.v-8.5, 0).toFixed(2);
+        exc = `${dev} UpH fuera de rango`;
+      }
+    }
+    const badge = noLimit
+      ? `<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:#f0f0ee;color:#888;font-weight:500;">Ref.</span>`
+      : `<span class="badge ${BADGE[p.s]}">${BADGE_LABEL[p.s]}</span>`;
+    const val = typeof p.v === 'number' ? p.v.toLocaleString('es-AR') : p.v;
+    return `<tr>
+      <td>${p.p}</td>
+      <td style="font-weight:500;">${val} ${p.u}</td>
+      <td style="color:#888;">${p.lim}</td>
+      <td style="color:${p.s==='danger'?'#501313':p.s==='warning'?'#633806':'#888'};">${exc}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+
+  // Alertas dinámicas
+  const danger  = pt.params.filter(p => p.s === 'danger');
+  const warning = pt.params.filter(p => p.s === 'warning');
+  const alertsHtml = [
+    ...danger.map(p  => `<div class="modal-alert danger"><i class="ti ${icons.danger}"></i><span><b>${p.p}:</b> ${p.v.toLocaleString('es-AR')} ${p.u} — fuera del límite legal (${p.lim}).</span></div>`),
+    ...warning.map(p => `<div class="modal-alert warning"><i class="ti ${icons.warning}"></i><span><b>${p.p}:</b> ${p.v.toLocaleString('es-AR')} ${p.u} — cerca del límite, monitoreo intensificado recomendado.</span></div>`),
+    ...(!danger.length && !warning.length
+      ? [`<div class="modal-alert ok"><i class="ti ${icons.ok}"></i><span>Todos los parámetros dentro de los límites legales.</span></div>`]
+      : [])
+  ].join('');
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-hero">
+      <div style="width:5px;height:44px;border-radius:3px;background:${STATUS_COLOR[st]};flex-shrink:0;"></div>
+      <div style="flex:1;padding-left:8px;">
+        <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">${pt.type}</div>
+        <div style="font-size:12px;color:#666;line-height:1.4;">${pt.desc}</div>
+      </div>
+      <span class="badge ${BADGE[st]}" style="font-size:12px;padding:4px 12px;">${BADGE_LABEL[st]}</span>
+    </div>
+
+    <div class="modal-section-label">Cumplimiento regulatorio — parámetros controlados</div>
+    <div class="modal-chart-wrap" style="height:${regulated.length * 48}px;margin-bottom:1.25rem;">
+      <canvas id="modalCanvas"></canvas>
+    </div>
+
+    <div class="modal-section-label">Todos los parámetros medidos</div>
+    <table class="modal-table" style="margin-bottom:1.25rem;">
+      <thead><tr>
+        <th>Parámetro</th><th>Valor</th><th>Límite legal</th><th>Excedencia</th><th>Estado</th>
+      </tr></thead>
+      <tbody>${paramRows}</tbody>
+    </table>
+
+    <div class="modal-section-label">Alertas</div>
+    <div class="modal-alerts">${alertsHtml}</div>
+
+    ${pt.historico && CAMPANAS_LABELS.length ? `
+    <div class="modal-section-label" style="margin-top:1.25rem;">Tendencia histórica — % cumplimiento · ${CAMPANAS_LABELS.length} campañas</div>
+    <div class="modal-chart-wrap" style="height:200px;margin-bottom:0.5rem;"><canvas id="modalCanvasHist"></canvas></div>
+    <div style="font-size:10px;color:#aaa;padding-bottom:0.5rem;">Datos desde ${CAMPANAS_LABELS[0]}. 100% = cumple el límite legal.</div>
+    ` : ''}`;
+
+  document.getElementById('detailModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  requestAnimationFrame(() => {
+    if (_mc)  { _mc.destroy();  _mc  = null; }
+    if (_mc2) { _mc2.destroy(); _mc2 = null; }
+
+    const canvas = document.getElementById('modalCanvas');
+    if (canvas) _mc = new Chart(canvas, chartCfg);
+
+    if (pt.historico && CAMPANAS_LABELS.length) {
+      function histPct(param, v) {
+        if (param === 'pH') {
+          if (v >= 6.5 && v <= 8.5) return 100;
+          return Math.max(0, Math.round(100 - Math.max(6.5 - v, v - 8.5, 0) * 15));
+        }
+        if (param === 'od') return Math.min(100, Math.round(v / 5000 * 100));
+        if (param === 'as') return Math.max(0, Math.min(100, Math.round(50 / Math.max(v, 0.01) * 100)));
+        return 100;
+      }
+      const histChartCfg = {
+        type: 'line',
+        data: {
+          labels: CAMPANAS_LABELS,
+          datasets: [
+            { label: 'pH',           data: pt.historico.map(h => histPct('pH', h[0])), borderColor: '#1D9E75', backgroundColor: 'rgba(29,158,117,0.06)', tension: 0.3, pointRadius: 3, fill: true },
+            { label: 'OD',           data: pt.historico.map(h => histPct('od', h[1])), borderColor: '#378ADD', backgroundColor: 'transparent',             tension: 0.3, pointRadius: 3 },
+            { label: 'Arsénico',     data: pt.historico.map(h => histPct('as', h[2])), borderColor: '#E24B4A', backgroundColor: 'transparent',             tension: 0.3, pointRadius: 3 },
+            { label: 'Límite (100%)',data: Array(CAMPANAS_LABELS.length).fill(100),    borderColor: '#aaa',    backgroundColor: 'transparent',             borderDash: [4,3], pointRadius: 0 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: true, position: 'bottom', labels: { font: { size: 11 }, color: '#888', padding: 10, boxWidth: 12 } } },
+          scales: {
+            x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 } } },
+            y: { min: 0, max: 105, grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 }, callback: v => v + '%' } }
+          }
+        }
+      };
+      const canvasHist = document.getElementById('modalCanvasHist');
+      if (canvasHist) _mc2 = new Chart(canvasHist, histChartCfg);
+    }
+  });
+}
+
+function exportCompTable() {
+  if (!MONITORING_POINTS.length) return;
+  const rows = MONITORING_POINTS.map(pt => {
+    const g  = name => pt.params.find(x => x.p === name);
+    const pH = g('pH');
+    const od = g('Oxígeno Disuelto');
+    const cd = g('Conductividad');
+    const as = g('Arsénico Total');
+    const li = g('Litio Disuelto');
+    return {
+      'Pozo':                       pt.name,
+      'ID':                         pt.id,
+      'Tipo':                       pt.type,
+      'Fecha':                      pt.fecha,
+      'pH (UpH)':                   pH ? pH.v : '',
+      'pH Estado':                  pH ? BADGE_LABEL[pH.s] : '',
+      'Oxígeno Disuelto (µg/L)':    od ? od.v : '',
+      'OD Estado':                  od ? BADGE_LABEL[od.s] : '',
+      'Conductividad (µS/cm)':      cd ? cd.v : '',
+      'Arsénico Total (µg/L)':      as ? as.v : '',
+      'As Estado':                  as ? BADGE_LABEL[as.s] : '',
+      'As Excedencia (× límite 50)':as && as.v > 50 ? (as.v / 50).toFixed(1) + '×' : '—',
+      'Litio Disuelto (µg/L)':      li ? li.v : '',
+      'Estado General':             BADGE_LABEL[pointStatus(pt)]
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    {wch:18},{wch:10},{wch:24},{wch:12},
+    {wch:10},{wch:12},{wch:24},{wch:12},
+    {wch:22},{wch:22},{wch:12},{wch:26},{wch:22},{wch:14}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Calidad Agua Dic 2024');
+  XLSX.writeFile(wb, 'monitoreo_agua_subterranea_dic2024.xlsx');
+}
+
+async function loadDemoData() {
+  try {
+    const res  = await fetch('demo-data.json');
+    const data = await res.json();
+
+    MONITORING_POINTS  = data.puntos_agua;
+    CAMPANAS_LABELS    = data.meta.campanas_labels || [];
+
+    // Actualizar subtítulo del mapa
+    const sub = document.getElementById('envMapSubtitle');
+    if (sub) sub.textContent = `${data.kpi.label_periodo} · OpenStreetMap`;
+
+    // KPIs Vista Ejecutiva
+    buildExecutiveKPIs(data);
+
+    // Generar modales dinámicos desde datos reales
+    buildPhModal();
+    buildOdModal();
+    buildAsModal();
+
+    // Renderizar tablas
+    renderOperativeTable();
+    buildComparativeTable();
+
+    // Actualizar mapa si ya está inicializado
+    if (envMap) renderEnvLayers();
+    else updateEnvMapStats();
+
+  } catch (e) {
+    console.warn('demo-data.json no disponible — usando datos de placeholder:', e.message);
+  }
+}
+
+loadDemoData();
+
+</script>
+</body>
+</html>

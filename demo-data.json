@@ -1,0 +1,250 @@
+{
+  "meta": {
+    "proyecto": "Proyecto Litio Norte",
+    "operador": "Demo Mining S.A.",
+    "concesiones": ["Concesión Norte A", "Concesión Norte B"],
+    "campana": "Campaña N°10 — Diciembre 2024",
+    "fecha_actualizacion": "2024-12-05",
+    "n_pozos": 13,
+    "n_parametros": 76,
+    "nota": "Datos genéricos de referencia · nombres y valores anonimizados",
+    "campanas_labels": ["Dic 2021","Jun 2022","Dic 2022","Jun 2023","Dic 2023","Jun 2024","Sep 2024","Oct 2024","Nov 2024","Dic 2024"]
+  },
+  "kpi": {
+    "pozos_ok": 2,
+    "pozos_atencion": 0,
+    "pozos_alerta": 11,
+    "cumplimiento_hidrico_pct": 62,
+    "campanas_anio": 10,
+    "label_periodo": "Campaña Dic 2024 · 13 pozos"
+  },
+  "exec_kpis": {
+    "gei":          { "v": 4820,   "u": "t CO₂e", "chg": "-8.3% vs Q1", "dir": "down-good" },
+    "recirculacion":{ "v": 74.2,   "u": "%",       "chg": "+3.1% vs Q1", "dir": "up"        },
+    "cumplimiento": { "v": 91,     "u": "%",       "chg": "Sin cambio",   "dir": "neutral"   },
+    "inversion":    { "v": 184000, "u": "USD",     "chg": "+12% vs Q1",  "dir": "up"        }
+  },
+  "puntos_agua": [
+    {
+      "id": "DEMO_01", "name": "Pozo Demo 01", "type": "Piezómetro — brine",
+      "lat": -23.3005, "lng": -67.0131,
+      "desc": "Concesión Norte A · GK 3394475/7423771 · 16 campañas", "fecha": "05/12/2024",
+      "params": [
+        { "p": "pH",              "v": 6.46,   "u": "UpH",   "lim": "6.5–8.5",  "s": "danger" },
+        { "p": "Oxígeno Disuelto","v": 6814,   "u": "µg/L",  "lim": "≥ 5.000",  "s": "ok"     },
+        { "p": "Conductividad",   "v": 191046, "u": "µS/cm", "lim": "Sin límite","s": "ok"     },
+        { "p": "Arsénico Total",  "v": 1408,   "u": "µg/L",  "lim": "≤ 50",     "s": "danger" },
+        { "p": "Litio Disuelto",  "v": 824000, "u": "µg/L",  "lim": "Referencia","s": "ok"     }
+      ],
+      "historico": [
+        [6.52, 7120, 1350],[6.48, 7050, 1365],[6.50, 6980, 1375],[6.51, 6950, 1385],
+        [6.49, 6920, 1390],[6.47, 6890, 1395],[6.44, 6870, 1400],[6.45, 6850, 1402],
+        [6.45, 6830, 1405],[6.46, 6814, 1408]
+      ]
+    },
+    {
+      "id": "DEMO_02", "name": "Pozo Demo 02", "type": "Piezómetro — brine",
+      "lat": -23.2728, "lng": -67.0019,
+      "desc": "Concesión Norte A · GK 3395622/7426853 · 11 campañas", "fecha": "05/12/2024",
+      "params": [
+        { "p": "pH",              "v": 10.84,  "u": "UpH",   "lim": "6.5–8.5",  "s": "danger" },
+        { "p": "Oxígeno Disuelto","v": 7016,   "u": "µg/L",  "lim": "≥ 5.000",  "s": "ok"     },
+        { "p": "Conductividad",   "v": 160782, "u": "µS/cm", "lim": "Sin límite","s": "ok"     },
+        { "p": "Arsénico Total",  "v": 1180,   "u": "µg/L",  "lim": "≤ 50",     "s": "danger" },
+        { "p": "Litio Disuelto",  "v": 692000, "u": "µg/L",  "lim": "Referencia","s": "ok"     }
+      ],
+      "historico": [
+        [10.42, 7280, 1120],[10.55, 7200, 1135],[10.62, 7150, 1145],[10.70, 7100, 1155],
+        [10.75, 7080, 1162],[10.79, 7060, 1168],[10.81, 7040, 1172],[10.82, 7025, 1175],
+        [10.83, 7020, 1178],[10.84, 7016, 1180]
+      ]
+    },
+    {
+      "id": "DEMO_03", "name": "Pozo Demo 03", "type": "Piezómetro — brine",
+      "lat": -23.3297, "lng": -67.0299,
+      "desc": "Concesión Norte A · GK 3392765/7420530 · 10 campañas", "fecha": "05/12/2024",
+      "params": [
+        { "p": "pH",              "v": 7.05,  "u": "UpH",   "lim": "6.5–8.5",  "s": "ok"     },
+        { "p": "Oxígeno Disuelto","v": 4698,  "u": "µg/L",  "lim": "≥ 5.000",  "s": "warning" },
+        { "p": "Conductividad",   "v": 39413, "u": "µS/cm", "lim": "Sin límite","s": "ok"     },
+        { "p": "Arsénico Total",  "v": 380,   "u": "µg/L",  "lim": "≤ 50",     "s": "danger" },
+        { "p": "Litio Disuelto",  "v": 168000,"u": "µg/L",  "lim": "Referencia","s": "ok"     }
+      ],
+      "historico": [
+        [7.18, 5280, 355],[7.15, 5180, 360],[7.12, 5080, 364],[7.10, 4980, 368],
+        [7.08, 4920, 372],[7.07, 4860, 375],[7.06, 4830, 377],[7.06, 4810, 378],
+        [7.05, 4750, 379],[7.05, 4698, 380]
+      ]
+    },
+    {
+      "id": "DEMO_04", "name": "Pozo Demo 04", "type": "Piezómetro — brine",
+      "lat": -23.2729, "lng": -67.0017,
+      "desc": "Concesión Norte A · GK 3395638/7426847 · 9 campañas", "fecha": "05/12/2024",
+      "params": [
+        { "p": "pH",              "v": 7.53,   "u": "UpH",   "lim": "6.5–8.5",  "s": "ok"     },
+        { "p": "Oxígeno Disuelto","v": 6389,   "u": "µg/L",  "lim": "≥ 5.000",  "s": "ok"     },
+        { "p": "Conductividad",   "v": 143001, "u": "µS/cm", "lim": "Sin límite","s": "ok"     },
+        { "p": "Arsénico Total",  "v": 1240,   "u": "µg/L",  "lim": "≤ 50",     "s": "danger" },
+        { "p": "Litio Disuelto",  "v": 618000, "u": "µg/L",  "lim": "Referencia","s": "ok"     }
+      ],
+      "historico": [
+        [7.65, 6680, 1180],[7.62, 6580, 1195],[7.59, 6520, 1205],[7.57, 6480, 1212],
+        [7.55, 6450, 1218],[7.54, 6430, 1222],[7.54, 6415, 1228],[7.53, 6405, 1232],
+        [7.53, 6395, 1236],[7.53, 6389, 1240]
+      ]
+    },
+    {
+      "id": "DEMO_05", "name": "Pozo Demo 05", "type": "Piezómetro — brine",
+      "lat": -23.3173, "lng": -67.0157,
+      "desc": "Concesión Norte A · GK 3394205/7421907 · 11 campañas", "fecha": "05/12/2024",
+      "params": [
+        { "p": "pH",              "v": 7.64,   "u": "UpH",   "lim": "6.5–8.5",  "s": "ok"     },
+        { "p": "Oxígeno Disuelto","v": 5322,   "u": "µg/L",  "lim": "≥ 5.000",  "s": "ok"     },
+        { "p": "Conductividad",   "v": 119400, "u": "µS/cm", "lim": "Sin límite","s": "ok"     },
+        { "p": "Arsénico Total",  "v": 890,    "u": "µg/L",  "lim": "≤ 50",     "s": "danger" },
+        { "p": "Litio Disuelto",  "v": 514000, "u": "µg/L",  "lim": "Referencia","s": "ok"     }
+      ],
+      "historico": [
+        [7.78, 5680, 820],[7.75, 5580, 835],[7.72, 5490, 848],[7.70, 5430, 858],
+        [7.68, 5400, 865],[7.67, 5380, 872],[7.65, 5360, 878],[7.65, 5340, 883],
+        [7.64, 5330, 887],[7.64, 5322, 890]
+      ]
+    },
+    {
+      "id": "DEMO_06", "name": "Pozo Demo 06", "type": "Piezómetro — brine diluida",
+      "lat": -23.2947, "lng": -66.9947,
+      "desc": "Concesión Norte A · GK 3396350/7424417 · 11 campañas", "fecha": "05/12/2024",
+      "params": [
+        { "p": "pH",              "v": 9.22,  "u": "UpH",   "lim": "6.5–8.5",  "s": "danger" },
+        { "p": "Oxígeno Disuelto","v": 6212,  "u": "µg/L",  "lim": "≥ 5.000",  "s": "ok"     },
+        { "p": "Conductividad",   "v": 17146, "u": "µS/cm", "lim": "Sin límite","s": "ok"     },
+        { "p": "Arsénico Total",  "v": 85,    "u": "µg/L",  "lim": "≤ 50",     "s": "danger" },
+        { "p": "Litio Disuelto",  "v": 74000, "u": "µg/L",  "lim": "Referencia","s": "ok"     }
+      ],
+      "historico": [
+        [8.82, 6720, 72],[8.95, 6620, 75],[9.02, 6520, 77],[9.08, 6440, 79],
+        [9.12, 6380, 80],[9.15, 6330, 82],[9.18, 6290, 83],[9.19, 6270, 84],
+        [9.21, 6240, 84],[9.22, 6212, 85]
+      ]
+    },
+    {
+      "id": "DEMO_07", "name": "Pozo Demo 07", "type": "Piezómetro — brine",
+      "lat": -23.3384, "lng": -67.0111,
+      "desc": "Concesión Norte A · GK 3394676/7419560 · 10 campañas", "fecha": "05/12/2024",
+      "params": [
+        { "p": "pH",              "v": 9.28,  "u": "UpH",   "lim": "6.5–8.5",  "s": "danger"  },
+        { "p": "Oxígeno Disuelto","v": 4778,  "u": "µg/L",  "lim": "≥ 5.000",  "s": "warning" },
+        { "p": "Conductividad",   "v": 35962, "u": "µS/cm", "lim": "Sin límite","s": "ok"      },
+        { "p": "Arsénico Total",  "v": 210,   "u": "µg/L",  "lim": "≤ 50",     "s": "danger"  },
+        { "p": "Litio Disuelto",  "v": 154000,"u": "µg/L",  "lim": "Referencia","s": "ok"      }
+      ],
+      "historico": [
+        [8.92, 5580, 162],[9.00, 5380, 172],[9.08, 5180, 180],[9.12, 5050, 186],
+        [9.17, 4980, 190],[9.20, 4920, 195],[9.23, 4880, 200],[9.25, 4850, 204],
+        [9.27, 4810, 207],[9.28, 4778, 210]
+      ]
+    },
+    {
+      "id": "DEMO_08", "name": "Pozo Demo 08", "type": "DDH — agua dulce",
+      "lat": -23.3288, "lng": -67.0466,
+      "desc": "Concesión Norte B · GK 3391054/7420626 · 9 campañas · acuífero dulce", "fecha": "05/12/2024",
+      "params": [
+        { "p": "pH",              "v": 7.97,  "u": "UpH",   "lim": "6.5–8.5",  "s": "ok" },
+        { "p": "Oxígeno Disuelto","v": 6971,  "u": "µg/L",  "lim": "≥ 5.000",  "s": "ok" },
+        { "p": "Conductividad",   "v": 2912,  "u": "µS/cm", "lim": "Sin límite","s": "ok" },
+        { "p": "Arsénico Total",  "v": 38,    "u": "µg/L",  "lim": "≤ 50",     "s": "ok" },
+        { "p": "Litio Disuelto",  "v": 9200,  "u": "µg/L",  "lim": "Referencia","s": "ok" }
+      ],
+      "historico": [
+        [8.02, 7380, 34],[7.98, 7280, 35],[8.05, 7200, 36],[7.95, 7150, 36],
+        [8.01, 7120, 37],[7.99, 7090, 37],[7.98, 7060, 37],[7.96, 7040, 38],
+        [7.97, 7000, 38],[7.97, 6971, 38]
+      ]
+    },
+    {
+      "id": "DEMO_09", "name": "Pozo Demo 09", "type": "DDH/RW — brine",
+      "lat": -23.3039, "lng": -67.0382,
+      "desc": "Concesión Norte A · GK 3391910/7423395 · 11 campañas", "fecha": "05/12/2024",
+      "params": [
+        { "p": "pH",              "v": 7.33,   "u": "UpH",   "lim": "6.5–8.5",  "s": "ok"     },
+        { "p": "Oxígeno Disuelto","v": 5145,   "u": "µg/L",  "lim": "≥ 5.000",  "s": "ok"     },
+        { "p": "Conductividad",   "v": 181679, "u": "µS/cm", "lim": "Sin límite","s": "ok"     },
+        { "p": "Arsénico Total",  "v": 1560,   "u": "µg/L",  "lim": "≤ 50",     "s": "danger" },
+        { "p": "Litio Disuelto",  "v": 782000, "u": "µg/L",  "lim": "Referencia","s": "ok"     }
+      ],
+      "historico": [
+        [7.52, 5680, 1480],[7.48, 5580, 1495],[7.44, 5480, 1508],[7.42, 5380, 1518],
+        [7.40, 5300, 1525],[7.38, 5240, 1532],[7.36, 5200, 1540],[7.35, 5175, 1548],
+        [7.34, 5160, 1555],[7.33, 5145, 1560]
+      ]
+    },
+    {
+      "id": "DEMO_10", "name": "Pozo Demo 10", "type": "DDH/RW — brine",
+      "lat": -23.2731, "lng": -67.0297,
+      "desc": "Concesión Norte A · GK 3392784/7426805 · 10 campañas", "fecha": "05/12/2024",
+      "params": [
+        { "p": "pH",              "v": 7.83,   "u": "UpH",   "lim": "6.5–8.5",  "s": "ok"     },
+        { "p": "Oxígeno Disuelto","v": 6227,   "u": "µg/L",  "lim": "≥ 5.000",  "s": "ok"     },
+        { "p": "Conductividad",   "v": 114695, "u": "µS/cm", "lim": "Sin límite","s": "ok"     },
+        { "p": "Arsénico Total",  "v": 1080,   "u": "µg/L",  "lim": "≤ 50",     "s": "danger" },
+        { "p": "Litio Disuelto",  "v": 494000, "u": "µg/L",  "lim": "Referencia","s": "ok"     }
+      ],
+      "historico": [
+        [7.94, 6780, 1000],[7.91, 6680, 1015],[7.89, 6580, 1025],[7.87, 6500, 1035],
+        [7.86, 6440, 1042],[7.85, 6400, 1050],[7.84, 6360, 1058],[7.84, 6320, 1065],
+        [7.83, 6280, 1072],[7.83, 6227, 1080]
+      ]
+    },
+    {
+      "id": "DEMO_11W", "name": "Pozo Demo 11W", "type": "DDH — agua dulce",
+      "lat": -23.2950, "lng": -66.9943,
+      "desc": "Concesión Norte B · GK 3396353/7424419 · 11 campañas · acuífero dulce", "fecha": "05/12/2024",
+      "params": [
+        { "p": "pH",              "v": 7.80, "u": "UpH",   "lim": "6.5–8.5",  "s": "ok" },
+        { "p": "Oxígeno Disuelto","v": 7033, "u": "µg/L",  "lim": "≥ 5.000",  "s": "ok" },
+        { "p": "Conductividad",   "v": 2404, "u": "µS/cm", "lim": "Sin límite","s": "ok" },
+        { "p": "Arsénico Total",  "v": 42,   "u": "µg/L",  "lim": "≤ 50",     "s": "ok" },
+        { "p": "Litio Disuelto",  "v": 7800, "u": "µg/L",  "lim": "Referencia","s": "ok" }
+      ],
+      "historico": [
+        [7.88, 7380, 38],[7.86, 7280, 39],[7.84, 7200, 40],[7.83, 7150, 40],
+        [7.82, 7110, 41],[7.81, 7080, 41],[7.81, 7060, 42],[7.80, 7045, 42],
+        [7.80, 7038, 42],[7.80, 7033, 42]
+      ]
+    },
+    {
+      "id": "DEMO_12A", "name": "Pozo Demo 12A", "type": "Pozo RW-01 — brine",
+      "lat": -23.3617, "lng": -66.9998,
+      "desc": "Concesión Norte A · GK 3395840/7416973 · 10 campañas", "fecha": "05/12/2024",
+      "params": [
+        { "p": "pH",              "v": 7.61,  "u": "UpH",   "lim": "6.5–8.5",  "s": "ok"      },
+        { "p": "Oxígeno Disuelto","v": 4885,  "u": "µg/L",  "lim": "≥ 5.000",  "s": "warning" },
+        { "p": "Conductividad",   "v": 62971, "u": "µS/cm", "lim": "Sin límite","s": "ok"      },
+        { "p": "Arsénico Total",  "v": 720,   "u": "µg/L",  "lim": "≤ 50",     "s": "danger"  },
+        { "p": "Litio Disuelto",  "v": 271000,"u": "µg/L",  "lim": "Referencia","s": "ok"      }
+      ],
+      "historico": [
+        [7.78, 5780, 640],[7.75, 5620, 655],[7.72, 5480, 665],[7.70, 5340, 675],
+        [7.68, 5200, 682],[7.66, 5100, 690],[7.64, 5020, 698],[7.63, 4980, 705],
+        [7.62, 4935, 712],[7.61, 4885, 720]
+      ]
+    },
+    {
+      "id": "DEMO_13", "name": "Pozo Demo 13", "type": "Pozo RW-02 — brine",
+      "lat": -23.3411, "lng": -66.9979,
+      "desc": "Concesión Norte A · GK 3396020/7419258 · 10 campañas", "fecha": "05/12/2024",
+      "params": [
+        { "p": "pH",              "v": 7.65,   "u": "UpH",   "lim": "6.5–8.5",  "s": "ok"     },
+        { "p": "Oxígeno Disuelto","v": 3730,   "u": "µg/L",  "lim": "≥ 5.000",  "s": "danger" },
+        { "p": "Conductividad",   "v": 167620, "u": "µS/cm", "lim": "Sin límite","s": "ok"     },
+        { "p": "Arsénico Total",  "v": 1380,   "u": "µg/L",  "lim": "≤ 50",     "s": "danger" },
+        { "p": "Litio Disuelto",  "v": 721000, "u": "µg/L",  "lim": "Referencia","s": "ok"     }
+      ],
+      "historico": [
+        [7.80, 5780, 1280],[7.78, 5550, 1295],[7.76, 5280, 1305],[7.74, 5020, 1315],
+        [7.72, 4780, 1322],[7.70, 4520, 1335],[7.68, 4300, 1348],[7.67, 4150, 1358],
+        [7.66, 3950, 1368],[7.65, 3730, 1380]
+      ]
+    }
+  ]
+}
